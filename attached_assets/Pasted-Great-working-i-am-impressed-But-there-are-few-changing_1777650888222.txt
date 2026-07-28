@@ -1,0 +1,17 @@
+Great working i am impressed.
+But there are few changings that you must make 
+1)	add change password option as I will be distributing it mass people for their portfolio so I want to add a change password which changes the password upon verifying the previous password make sure to add Add new password and confirm password option.
+2)	Just like how there are option to adjust the Education Experience and other Sections I want this option inside each section and every now section that is created. 
+3)	I want Blog writing to be an experience for the students or worker where they will type the experiences they face and what they did how did they accomplished success or whatsoever, as there may me more post, I only want blog section to display only tittle and 1 line description and there should be a separate page when I click open all blog then I should show all blogs include the option to organize the priority in admin panel and ai chat will also tell recruiter about me from it.
+4)	New Created secession does not have much details portion to add I want to take huge amount to details when adding new content session. 
+5)	When editing the about me there are tick and cross button write next to it that collapses the rendering of the dialog box into a thin tiny square also fix that.
+6)	I want conditional rendering if there is nothing inside a particular section, I don’t want to display that entire section as it looks too hollow but show the system made section under the admin preview
+7)	In ai chat box there no indication that will tell the recruiter to chat and discuss the candidate so add a text too so it catches the recruiter eyes also give option of default messages such as 
+- Why should I hire this candidate.
+- Why should I not hire this candidate
+
+8)	First theme is okay but add more visuals in the seconds theme and on the third theme make it little light also lighten the background color of it. 
+9)	Also remove that title Dynamic portfolio Executive may be this Zilk Co then with dull created by as Zilk Co is my company 
+10)	The last thing if we could add the tip tap or react quill to edit text in admin panel to enable functions such as bold pointer and underline and / etc 
+
+	
