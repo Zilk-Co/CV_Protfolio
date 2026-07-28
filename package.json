@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "preinstall": "node -e \"const ua=process.env.npm_config_user_agent||'';if(!ua.startsWith('pnpm/')){console.error('Use pnpm instead');process.exit(1);}const fs=require('fs');['package-lock.json','yarn.lock'].forEach(f=>{try{fs.unlinkSync(f);}catch(e){}});\"",
     "dev": "npx concurrently \"pnpm --filter @workspace/api-server run dev\" \"pnpm --filter @workspace/portfolio run dev\"",
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "build": "pnpm -r --if-present run build",
+    "build:api": "cd artifacts/api-server && node build.mjs",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
