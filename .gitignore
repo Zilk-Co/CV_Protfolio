@@ -80,3 +80,16 @@ artifacts/api-server/src/scripts/
 .local/
 .replit
 replit.nix
+.replitignore
+replit.md
+.replit-artifact/
+
+# Mockup sandbox (dev only)
+artifacts/mockup-sandbox/
+
+# Local scripts
+start-all.ps1
+start-fe.bat
+
+# Duplicate nested src
+lib/api-client-react/src/src/
