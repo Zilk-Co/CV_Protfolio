@@ -1,12 +1,15 @@
 # See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
 # compiled output
-dist
 tmp
 out-tsc
 *.tsbuildinfo
 .expo
 .expo-shared
+
+# Build artifacts (keep api-server dist for Render)
+artifacts/portfolio/dist/
+artifacts/mockup-sandbox/dist/
 
 # dependencies
 node_modules
