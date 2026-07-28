@@ -790,7 +790,7 @@ export default function PortfolioPage() {
 
   // CV Export Section Settings
   const defaultSections = { experience: true, education: true, skills: true, certifications: true, blogs: true, customSections: true };
-  const [cvExportSections, setCvExportSections] = useState<Record<string, boolean>>(portfolio.cvExportSections || defaultSections);
+  const [cvExportSections, setCvExportSections] = useState<Record<string, boolean>>((portfolio as any)?.cvExportSections || defaultSections);
   const [showExportSettings, setShowExportSettings] = useState(false);
   const [savingExportSettings, setSavingExportSettings] = useState(false);
 
