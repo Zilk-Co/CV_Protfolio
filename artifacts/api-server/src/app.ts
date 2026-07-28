@@ -38,6 +38,8 @@ async function runMigrations() {
     if (convExists.rows.length === 0) {
       await pool.query(`ALTER TABLE conversations ADD COLUMN portfolio_id INTEGER REFERENCES portfolio(id) ON DELETE SET NULL;`);
     }
+    // Ensure default portfolio has admin login credentials
+    await pool.query(`UPDATE portfolio SET login_username = 'admin' WHERE slug = 'default' AND login_username != 'admin';`);
     logger.info("Database migrations completed");
   } catch (err) {
     logger.warn({ err }, "Migration warning (may already exist)");
