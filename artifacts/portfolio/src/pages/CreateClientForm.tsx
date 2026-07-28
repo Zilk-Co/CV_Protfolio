@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from "@/components/ui/label";
 import { Check, Plus, ArrowLeft, Loader2, Globe, Lock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api";
 
 export default function CreateClientForm() {
   const [, setLocation] = useLocation();
@@ -31,7 +32,7 @@ export default function CreateClientForm() {
     
     setLoading(true);
     try {
-      const response = await fetch("/api/portfolio/create-client", {
+      const response = await apiFetch("/api/portfolio/create-client", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)

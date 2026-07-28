@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Check, Loader2 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 interface CreateClientDialogProps {
   open: boolean;
@@ -30,7 +31,7 @@ export const CreateClientDialog = memo(function CreateClientDialog({ open, onOpe
   const handleCreate = async () => {
     setError(""); setLoading(true);
     try {
-      const res = await fetch("/api/portfolio/create-client", {
+      const res = await apiFetch("/api/portfolio/create-client", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-password": adminPassword },
         body: JSON.stringify({ name, slug, password }),

@@ -40,6 +40,7 @@ import { NexusContact } from "@/components/nexus/NexusContact";
 import { NexusCustomSections } from "@/components/nexus/NexusCustomSections";
 import { NexusFooter } from "@/components/nexus/NexusFooter";
 import { CreateClientDialog } from "@/components/CreateClientDialog";
+import { apiFetch } from "@/lib/api";
 
 
 type CvTemplateKey = "executive" | "minimal" | "sidebar" | "simplified" | "modern" | "creative" | "minimalist" | "freshgraduate" | "techportfolio" | "functional" | "combination" | "academic" | "timeline" | "twocol" | "infographic" | "darkmode" | "corporate" | "millennial" | "ivy" | "everest" | "quick" | "photo" | "cleanelegant" | "modernbasic" | "harvard" | "europass" | "metro" | "creativebeige" | "corporateats" | "boldgraphic" | "scienceeng" | "calligraphic" | "elegant" | "gradient" | "retro" | "conservative" | "artistic" | "ultraminimal" | "techstack" | "businesspro" | "academiccv" | "mosaic" | "brutalist" | "watercolor" | "neon" | "vintage" | "geometric" | "magazine" | "monochrome" | "copper" | "forest" | "royal" | "futuristic" | "handwritten" | "zen" | "pop" | "carbon" | "pearl" | "sunset" | "arctic" | "terracotta" | "indigo";
@@ -571,7 +572,7 @@ function ChangeUsernameDialog({ open, onClose }: { open: boolean; onClose: () =>
     setLoading(true);
     try {
       const token = localStorage.getItem("portfolio_token");
-      const res = await fetch("/api/portfolio/change-username", {
+      const res = await apiFetch("/api/portfolio/change-username", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ currentPassword: currentPw, newUsername }),
@@ -844,7 +845,7 @@ export default function PortfolioPage() {
     setSavingExportSettings(true);
     try {
       const token = localStorage.getItem("portfolio_token");
-      const res = await fetch("/api/portfolio/cv-export-sections", {
+      const res = await apiFetch("/api/portfolio/cv-export-sections", {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ sections: newSections }),
@@ -892,7 +893,7 @@ export default function PortfolioPage() {
 
   const handleLogout = async () => {
     // Revoke JWT on server
-    try { await fetch("/api/portfolio/logout", { method: "POST", ...getAuthHeaders() }); } catch {}
+    try { await apiFetch("/api/portfolio/logout", { method: "POST", ...getAuthHeaders() }); } catch {}
     localStorage.removeItem("portfolio_slug");
     localStorage.removeItem("portfolio_password");
     localStorage.removeItem("portfolio_token");
@@ -972,7 +973,7 @@ export default function PortfolioPage() {
   };
 
   const handleCvImport = async (data: Record<string, unknown>) => {
-    const res = await fetch("/api/portfolio/import-cv", {
+    const res = await apiFetch("/api/portfolio/import-cv", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -992,7 +993,7 @@ export default function PortfolioPage() {
   const handleReset = async () => {
     setIsResetting(true);
     try {
-      const res = await fetch("/api/portfolio/reset", { 
+      const res = await apiFetch("/api/portfolio/reset", { 
         method: "POST",
         headers: {
           "x-portfolio-slug": currentSlug,

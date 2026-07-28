@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Link } from "wouter";
+import { apiFetch } from "@/lib/api";
 import { useGetPortfolio } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +48,7 @@ export default function ExplorePage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch("/api/portfolio/explore", {
+        const response = await apiFetch("/api/portfolio/explore", {
           headers: {
             "x-portfolio-slug": slug,
             Authorization: `Bearer ${token}`,
@@ -128,7 +129,7 @@ export default function ExplorePage() {
     setAiLoading(true);
 
     try {
-      const res = await fetch("/api/portfolio/explore/match", {
+      const res = await apiFetch("/api/portfolio/explore/match", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -184,7 +185,7 @@ export default function ExplorePage() {
     setLoginLoading(true);
     setLoginError("");
     try {
-      const res = await fetch("/api/portfolio/login", {
+      const res = await apiFetch("/api/portfolio/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: loginUsername, password: loginPassword }),

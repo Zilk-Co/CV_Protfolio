@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from "@/lib/api";
 import { 
   Users, 
   Settings, 
@@ -68,7 +69,7 @@ export default function ClientManagement() {
   const handleAuthorize = async () => {
     if (!adminPassword) return;
     try {
-      const response = await fetch("/api/portfolio/clients", {
+      const response = await apiFetch("/api/portfolio/clients", {
         headers: { "x-admin-password": adminPassword }
       });
       if (response.ok) {
@@ -86,7 +87,7 @@ export default function ClientManagement() {
   const fetchClients = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/portfolio/clients", {
+      const response = await apiFetch("/api/portfolio/clients", {
         headers: { "x-admin-password": adminPassword }
       });
       if (response.ok) {
