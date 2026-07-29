@@ -1519,6 +1519,7 @@ html { scroll-behavior: smooth; }
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  padding-top: 80px;
 }
 
 .nexus-hero-bg {
@@ -1666,12 +1667,12 @@ html { scroll-behavior: smooth; }
 
 /* â”€â”€ Floating Glass Navbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .nexus-nav {
-  position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 50;
+  position: fixed; top: 44px; left: 50%; transform: translateX(-50%); z-index: 50;
   background: rgba(0,0,0,0.7); backdrop-filter: blur(20px) saturate(1.5);
   border: 1px solid rgba(255,255,255,0.06); border-radius: 9999px;
-  padding: 8px 24px;
+  padding: 8px 24px; max-width: calc(100vw - 2rem);
 }
-.nexus-nav-inner { display: flex; align-items: center; gap: 24px; }
+.nexus-nav-inner { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; justify-content: center; }
 .nexus-nav-logo { font-weight: 700; color: #F4B400; text-decoration: none; font-size: 0.9rem; white-space: nowrap; }
 .nexus-nav-links { display: flex; gap: 4px; }
 .nexus-nav-link {

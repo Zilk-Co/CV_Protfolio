@@ -21,22 +21,35 @@ function InlineEditHero({ value, onSave, className = "" }: {
   useEffect(() => { setDraft(value); }, [value]);
   const commit = () => { onSave(draft); setEditing(false); };
   const cancel = () => { setDraft(value); setEditing(false); };
+  const plainText = value?.replace(/<[^>]*>/g, "").trim() || "";
   if (!editing) return (
     <span className={`group relative cursor-pointer hover:opacity-80 ${className}`} onClick={() => setEditing(true)} title="Click to edit">
-      {value || <span className="opacity-40">Click to edit...</span>}
+      {plainText ? (
+        <span dangerouslySetInnerHTML={{ __html: value }} />
+      ) : (
+        <span className="opacity-40">Click to edit...</span>
+      )}
       <Pencil className="inline ml-1 w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />
     </span>
   );
   return (
-    <span className="inline-flex items-center gap-1 flex-wrap">
-      <Input className={`h-7 py-0 ${className}`} value={draft}
+    <div className="w-full">
+      <textarea
+        value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") cancel(); }}
+        rows={3}
+        className="w-full rounded-lg border border-border bg-background text-foreground p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
         autoFocus
       />
-      <button onClick={commit} className="text-green-500 flex-shrink-0"><Check className="w-4 h-4" /></button>
-      <button onClick={cancel} className="text-red-400 flex-shrink-0"><X className="w-4 h-4" /></button>
-    </span>
+      <div className="flex items-center gap-2 mt-2">
+        <button onClick={commit} className="flex items-center gap-1 px-3 py-1 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700">
+          <Check className="w-3 h-3" /> Save
+        </button>
+        <button onClick={cancel} className="flex items-center gap-1 px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80">
+          <X className="w-3 h-3" /> Cancel
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -149,7 +162,7 @@ export function NexusHero({
             <span className="nexus-typewriter-cursor">|</span>
           </div>
 
-          <motion.p
+          <motion.div
             className="nexus-hero-bio"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -159,12 +172,13 @@ export function NexusHero({
               <InlineEditHero
                 value={portfolio.about || ""}
                 onSave={(v) => onFieldSave({ about: v })}
-                className="nexus-hero-bio"
               />
+            ) : portfolio.about ? (
+              <span dangerouslySetInnerHTML={{ __html: portfolio.about }} />
             ) : (
-              portfolio.about || "Passionate about building impactful digital experiences."
+              "Passionate about building impactful digital experiences."
             )}
-          </motion.p>
+          </motion.div>
 
           <motion.div
             className="nexus-hero-buttons"
