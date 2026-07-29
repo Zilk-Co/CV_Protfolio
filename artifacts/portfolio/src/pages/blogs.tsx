@@ -11,7 +11,7 @@ import {
 import type { Blog } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RichTextEditor, RichTextDisplay } from "@/components/RichTextEditor";
 import { ArrowLeft, Plus, Pencil, Trash2, ChevronUp, ChevronDown, Loader2, BookOpen, CalendarDays } from "lucide-react";
@@ -161,19 +161,22 @@ export default function BlogsPage() {
       </div>
 
       <Dialog open={showDialog} onOpenChange={(o) => { if (!o) { setShowDialog(false); setEditingBlog(null); } }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editingBlog ? "Edit Blog Post" : "Write New Blog Post"}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" style={{ color: "#e5e5e5" }}>
+          <DialogHeader>
+            <DialogTitle>{editingBlog ? "Edit Blog Post" : "Write New Blog Post"}</DialogTitle>
+            <DialogDescription className="sr-only">Create or edit your blog post</DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium block mb-1 text-foreground">Post Title *</label>
-              <Input value={blogTitle} onChange={(e) => setBlogTitle(e.target.value)} placeholder="What's this post about?" className="text-base text-foreground" />
+              <label className="text-sm font-medium block mb-1" style={{ color: "#d4d4d4" }}>Post Title *</label>
+              <Input value={blogTitle} onChange={(e) => setBlogTitle(e.target.value)} placeholder="What's this post about?" className="text-base" style={{ color: "#f5f5f5" }} />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1 text-foreground">One-line Summary (shown in preview)</label>
-              <Input value={blogSummary} onChange={(e) => setBlogSummary(e.target.value)} placeholder="A short description for the main page..." className="text-foreground" />
+              <label className="text-sm font-medium block mb-1" style={{ color: "#d4d4d4" }}>One-line Summary (shown in preview)</label>
+              <Input value={blogSummary} onChange={(e) => setBlogSummary(e.target.value)} placeholder="A short description for the main page..." style={{ color: "#f5f5f5" }} />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1 text-foreground">Full Content *</label>
+              <label className="text-sm font-medium block mb-1" style={{ color: "#d4d4d4" }}>Full Content *</label>
               <RichTextEditor content={blogContent} onChange={setBlogContent} placeholder="Share your experience, what you did, how you accomplished it..." minHeight="250px" />
             </div>
           </div>

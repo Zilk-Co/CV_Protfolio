@@ -100,7 +100,7 @@ html { scroll-behavior: smooth; }
 }
 
 /* â”€â”€ TipTap prose styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.prose { color: var(--foreground); }
+.prose { color: #e5e5e5; }
 .prose h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0 0.25rem; }
 .prose strong { font-weight: 700; }
 .prose em { font-style: italic; }
