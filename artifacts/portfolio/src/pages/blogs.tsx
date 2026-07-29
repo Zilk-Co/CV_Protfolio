@@ -165,15 +165,15 @@ export default function BlogsPage() {
           <DialogHeader><DialogTitle>{editingBlog ? "Edit Blog Post" : "Write New Blog Post"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium block mb-1">Post Title *</label>
-              <Input value={blogTitle} onChange={(e) => setBlogTitle(e.target.value)} placeholder="What's this post about?" className="text-base" />
+              <label className="text-sm font-medium block mb-1 text-foreground">Post Title *</label>
+              <Input value={blogTitle} onChange={(e) => setBlogTitle(e.target.value)} placeholder="What's this post about?" className="text-base text-foreground" />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1">One-line Summary (shown in preview)</label>
-              <Input value={blogSummary} onChange={(e) => setBlogSummary(e.target.value)} placeholder="A short description for the main page..." />
+              <label className="text-sm font-medium block mb-1 text-foreground">One-line Summary (shown in preview)</label>
+              <Input value={blogSummary} onChange={(e) => setBlogSummary(e.target.value)} placeholder="A short description for the main page..." className="text-foreground" />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1">Full Content *</label>
+              <label className="text-sm font-medium block mb-1 text-foreground">Full Content *</label>
               <RichTextEditor content={blogContent} onChange={setBlogContent} placeholder="Share your experience, what you did, how you accomplished it..." minHeight="250px" />
             </div>
           </div>

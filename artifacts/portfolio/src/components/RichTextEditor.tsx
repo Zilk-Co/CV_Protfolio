@@ -43,7 +43,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Write somethi
     `h-7 w-7 p-0 rounded hover:bg-muted transition-colors ${active ? "bg-muted text-foreground" : "text-muted-foreground"}`;
 
   return (
-    <div className="border border-input rounded-lg overflow-hidden bg-background">
+    <div className="border border-input rounded-lg overflow-hidden bg-background text-foreground">
       <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-input bg-muted/30">
         <button type="button" className={btnClass(editor.isActive("bold"))} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold">
           <Bold className="w-3.5 h-3.5 mx-auto" />
