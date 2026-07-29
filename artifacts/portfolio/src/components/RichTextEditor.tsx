@@ -25,7 +25,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Write somethi
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none focus:outline-none p-3 min-h-[inherit]",
+        class: "prose prose-sm prose-invert max-w-none focus:outline-none p-3 min-h-[inherit]",
         style: `min-height: ${minHeight}`,
       },
     },

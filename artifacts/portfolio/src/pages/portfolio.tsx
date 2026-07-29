@@ -938,10 +938,9 @@ export default function PortfolioPage() {
   const [typewriterDeleting, setTypewriterDeleting] = useState(false);
   const nexusTitles = [
     portfolio?.title || "Professional",
-    "Finance Student",
-    "ACCA Candidate",
-    "Future Financial Analyst",
+    ...[...new Set((portfolio?.skills || []).map((s: any) => s.category).filter(Boolean))].slice(0, 3),
   ];
+  if (nexusTitles.length <= 1) nexusTitles.push("Creative Thinker", "Problem Solver");
   useEffect(() => {
     if (theme !== "nexus") return;
     const current = nexusTitles[typewriterIdx] || "";
@@ -1312,6 +1311,7 @@ export default function PortfolioPage() {
           onPhotoClick={() => photoInputRef.current?.click()}
           onRemovePhoto={handleRemovePhoto}
           onExport={handleExport}
+          onFieldSave={(field) => updatePortfolio(field)}
           features={{ cvImportExport: !!features.cvImportExport }}
         />
       ) : (
