@@ -30,7 +30,6 @@ import {
   Settings, ImageOff, Menu, RotateCcw, Download, ArrowRight, SlidersHorizontal
 } from "lucide-react";
 import { NexusHero } from "@/components/nexus/NexusHero";
-import { NexusNavbar } from "@/components/nexus/NexusNavbar";
 import { NexusAbout } from "@/components/nexus/NexusAbout";
 import { NexusTimeline } from "@/components/nexus/NexusTimeline";
 import { NexusSkills } from "@/components/nexus/NexusSkills";
@@ -1279,30 +1278,6 @@ export default function PortfolioPage() {
         )}
       </div>
 
-      <>
-      {/* ── Floating Navbar (Nexus theme only) ─────────────────────────── */}
-      {theme === "nexus" && (
-        <NexusNavbar
-          isAdmin={isAdmin}
-          portfolio={portfolio}
-          features={{ cvImportExport: !!features.cvImportExport, exploreAccess: !!features.exploreAccess }}
-          theme={theme}
-          onThemeChange={(t) => setTheme(t as any)}
-          onExport={handleExport}
-          isExporting={isExporting}
-          onImportCV={() => setShowImportDialog(true)}
-          onReset={() => setShowResetDialog(true)}
-          onChangePassword={() => setShowChangePasswordDialog(true)}
-          onLogout={handleLogout}
-          statusLabel={statusLabel}
-          onStatusChange={(s) => updatePortfolio({ status: s as any })}
-          selectedCvTemplate={selectedCvTemplate}
-          onCvTemplateChange={(t) => setSelectedCvTemplate(t)}
-          cvTemplates={CV_TEMPLATE_OPTIONS}
-          statusOptions={STATUS_OPTIONS}
-        />
-      )}
-
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       {theme === "nexus" ? (
         <NexusHero
@@ -1675,7 +1650,6 @@ export default function PortfolioPage() {
           </Button>
         )}
       </main>
-      </>
 
       {/* ── Dialogs ─────────────────────────────────────────────────────── */}
       {/* Change Password */}
