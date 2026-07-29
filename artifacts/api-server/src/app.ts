@@ -40,6 +40,8 @@ async function runMigrations() {
     }
     // Ensure default portfolio has admin login credentials
     await pool.query(`UPDATE portfolio SET login_username = 'admin' WHERE slug = 'default' AND login_username != 'admin';`);
+    // Ensure default portfolio has aiChat and themeSelector enabled
+    await pool.query(`UPDATE portfolio SET features = jsonb_set(jsonb_set(COALESCE(features, '{}'), '{aiChat}', 'true'), '{themeSelector}', 'true') WHERE slug = 'default';`);
     logger.info("Database migrations completed");
   } catch (err) {
     logger.warn({ err }, "Migration warning (may already exist)");

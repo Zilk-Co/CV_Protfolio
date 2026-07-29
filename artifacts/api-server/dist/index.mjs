@@ -73997,6 +73997,7 @@ async function runMigrations() {
       await pool.query(`ALTER TABLE conversations ADD COLUMN portfolio_id INTEGER REFERENCES portfolio(id) ON DELETE SET NULL;`);
     }
     await pool.query(`UPDATE portfolio SET login_username = 'admin' WHERE slug = 'default' AND login_username != 'admin';`);
+    await pool.query(`UPDATE portfolio SET features = jsonb_set(jsonb_set(COALESCE(features, '{}'), '{aiChat}', 'true'), '{themeSelector}', 'true') WHERE slug = 'default';`);
     logger.info("Database migrations completed");
   } catch (err) {
     logger.warn({ err }, "Migration warning (may already exist)");

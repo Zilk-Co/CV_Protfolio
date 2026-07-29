@@ -290,7 +290,7 @@ export default function ExplorePage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "profiles" | "blogs" | "ai-match")} className="w-full">
-          <TabsList className={`grid w-full mb-6 ${hasAiMatchAccess ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          <TabsList className={`grid w-full mb-6 grid-cols-2 ${hasAiMatchAccess ? 'sm:grid-cols-3' : ''}`}>
             <TabsTrigger value="profiles" className="gap-2">
               <Users className="w-4 h-4" />
               Profiles ({filteredProfiles.length})
@@ -423,7 +423,7 @@ export default function ExplorePage() {
               </div>
 
               {/* Messages */}
-              <div className="h-[400px] overflow-y-auto p-4 space-y-4">
+              <div className="h-[60vh] max-h-[400px] overflow-y-auto p-4 space-y-4">
                 {aiMessages.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />

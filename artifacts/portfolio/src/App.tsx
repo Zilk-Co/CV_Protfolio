@@ -8,7 +8,6 @@ import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import CreateClientForm from "@/pages/CreateClientForm";
 import ClientManagement from "@/pages/ClientManagement";
-import ExplorePage from "@/pages/Explore";
 
 import { setPortfolioSlugGetter, setPortfolioPasswordGetter } from "@workspace/api-client-react";
 
@@ -29,7 +28,7 @@ setPortfolioSlugGetter(() => {
     return localStorage.getItem("portfolio_slug") || 'default';
   }
   
-  if (first === 'blogs' || first === 'explore') {
+  if (first === 'blogs') {
     return localStorage.getItem("portfolio_slug") || 'default';
   }
   
@@ -59,7 +58,6 @@ function Router() {
       <Route path="/admin/clients" component={ClientManagement} />
       <Route path="/admin/create" component={CreateClientForm} />
       <Route path="/admin/:slug" component={Portfolio} />
-      <Route path="/explore" component={ExplorePage} />
       {/* Blog routes MUST come before /:slug to take precedence */}
       <Route path="/blogs" component={BlogsPage} />
       <Route path="/:slug/blogs" component={BlogsPage} />

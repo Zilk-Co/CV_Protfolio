@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { RichTextEditor, RichTextDisplay } from "@/components/RichTextEditor";
 import {
   Pencil, Check, X, Plus, Trash2, ChevronUp, ChevronDown,
-  MessageCircle, Send, Upload, FileText, Loader2, Users,
+  Send, Upload, FileText, Loader2, Users,
   Mail, Phone, MapPin, User, Briefcase, GraduationCap, Wrench,
   Award, BookOpen, Layers, Sparkles, Lock, Eye, EyeOff, ExternalLink, AlignLeft,
   Settings, ImageOff, Menu, RotateCcw, Download, ArrowRight, SlidersHorizontal
@@ -40,6 +40,7 @@ import { NexusContact } from "@/components/nexus/NexusContact";
 import { NexusCustomSections } from "@/components/nexus/NexusCustomSections";
 import { NexusFooter } from "@/components/nexus/NexusFooter";
 import { CreateClientDialog } from "@/components/CreateClientDialog";
+import { FloatingAiChat } from "@/components/FloatingAiChat";
 import { apiFetch } from "@/lib/api";
 
 
@@ -279,159 +280,6 @@ function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem("portfolio_token");
   if (token) return { "Authorization": `Bearer ${token}` };
   return {};
-}
-
-// ─── AI Chat ─────────────────────────────────────────────────────────────
-function AiChat({ portfolioName, slug }: { portfolioName: string; slug: string }) {
-  const [open, setOpen] = useState(false);
-  const [conversationId, setConversationId] = useState<number | null>(null);
-  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const DEFAULT_MESSAGES = [
-    `What makes ${portfolioName} stand out?`,
-    `What kind of roles would ${portfolioName} be a good fit for?`,
-    `What are ${portfolioName}'s strongest skills?`,
-    `Tell me about ${portfolioName}'s career journey`,
-  ];
-
-  // Reset chat context when switching portfolios
-  useEffect(() => {
-    setMessages([]);
-    setConversationId(null);
-    setOpen(false);
-  }, [slug]);
-
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
-
-  const createConversation = async () => {
-    console.log(`[AiChat] Creating conversation with slug: "${slug}"`);
-    const res = await fetch(`/api/openai/conversations?slug=${encodeURIComponent(slug)}`, { 
-      method: "POST", 
-      headers: { 
-        "Content-Type": "application/json",
-        "x-portfolio-slug": slug,
-        ...getAuthHeaders(),
-      }, 
-      body: JSON.stringify({ title: `Chat with ${portfolioName}` }) 
-    });
-    if (!res.ok) throw new Error("Could not create conversation");
-    return (await res.json()).id as number;
-  };
-
-  const sendMessage = async (msg?: string) => {
-    const content = (msg || input).trim();
-    if (!content || loading) return;
-    setInput("");
-    setMessages(m => [...m, { role: "user", content }]);
-    setLoading(true);
-    let convId = conversationId;
-    if (!convId) { convId = await createConversation(); setConversationId(convId); }
-    console.log(`[AiChat] Sending message for slug: "${slug}", convId: ${convId}`);
-    const res = await fetch(`/api/openai/conversations/${convId}/messages?slug=${encodeURIComponent(slug)}`, { 
-      method: "POST", 
-      headers: { 
-        "Content-Type": "application/json",
-        "x-portfolio-slug": slug,
-        ...getAuthHeaders(),
-      }, 
-      body: JSON.stringify({ content }) 
-    });
-    const reader = res.body?.getReader();
-    if (!reader) { setLoading(false); return; }
-    let assistantContent = "";
-    setMessages(m => [...m, { role: "assistant", content: "" }]);
-    const decoder = new TextDecoder();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      for (const line of decoder.decode(value).split("\n").filter(l => l.startsWith("data: "))) {
-        try {
-          const parsed = JSON.parse(line.slice(6));
-          if (parsed.error) {
-            assistantContent = "Sorry, something went wrong. Please try again.";
-            setMessages(m => { const u = [...m]; u[u.length - 1] = { role: "assistant", content: assistantContent }; return u; });
-            break;
-          }
-          if (parsed.done) break;
-          if (parsed.content) { assistantContent += parsed.content; setMessages(m => { const u = [...m]; u[u.length - 1] = { role: "assistant", content: assistantContent }; return u; }); }
-        } catch {}
-      }
-      if (assistantContent === "Sorry, something went wrong. Please try again.") break;
-    }
-    setLoading(false);
-  };
-
-  return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className="ai-chat-trigger fixed bottom-6 right-6 z-50 group flex items-center gap-2.5 px-5 py-3 rounded-full text-white font-semibold text-sm shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95"
-      >
-        {/* Pulse ring */}
-        <span className="relative flex-shrink-0">
-          <span className="absolute inset-0 rounded-full bg-white/30 animate-ping" style={{ animationDuration: "2s" }} />
-          <Sparkles className="w-4 h-4 relative z-10" />
-        </span>
-        <span className="whitespace-nowrap">Chat with {portfolioName}'s AI</span>
-      </button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md h-[640px] flex flex-col p-0 overflow-hidden">
-          <DialogHeader className="px-4 py-3 border-b flex-shrink-0">
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              Ask about {portfolioName}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground mt-0.5">Discuss this candidate with the AI — ask anything about their background, skills, or fit.</DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.length === 0 && (
-              <div className="space-y-4">
-                <div className="text-center text-muted-foreground text-sm pt-4">
-                  <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p className="font-medium mb-1">I know everything about {portfolioName}</p>
-                  <p className="text-xs opacity-60">Ask me about their experience, skills, achievements, or suitability for your role.</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Quick questions</p>
-                  {DEFAULT_MESSAGES.map((msg) => (
-                    <button key={msg} onClick={() => sendMessage(msg)} className="w-full text-left text-sm px-3 py-2 rounded-lg border border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-colors text-foreground">
-                      {msg}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[82%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap leading-relaxed ${m.role === "user" ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted text-foreground rounded-bl-sm"}`}>
-                  {m.content || <Loader2 className="w-3 h-3 animate-spin" />}
-                </div>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-          {messages.length > 0 && (
-            <div className="px-4 pb-1 flex flex-wrap gap-1">
-              {DEFAULT_MESSAGES.slice(0, 2).map((msg) => (
-                <button key={msg} onClick={() => sendMessage(msg)} className="text-xs px-2 py-1 rounded-full border border-primary/20 hover:bg-primary/10 transition-colors text-muted-foreground">
-                  {msg}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="border-t p-3 flex gap-2 flex-shrink-0">
-            <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask anything about this person..." onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()} disabled={loading} />
-            <Button size="icon" onClick={() => sendMessage()} disabled={loading || !input.trim()}>
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
 }
 
 // ─── CV Import ────────────────────────────────────────────────────────────
@@ -1287,13 +1135,6 @@ export default function PortfolioPage() {
                       </a>
                     </div>
                   )}
-                  {features.exploreAccess && (
-                    <a href="/explore" className="no-underline">
-                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1 bg-purple-600/10 border-purple-500/30 text-purple-400 hover:bg-purple-600/20">
-                        <Users className="w-3 h-3" /> Explore
-                      </Button>
-                    </a>
-                  )}
                   {features.cvImportExport && (
                     <Button size="sm" variant="outline" onClick={handleExport} disabled={isExporting} className="h-7 text-xs gap-1">
                       {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} Export
@@ -1360,7 +1201,7 @@ export default function PortfolioPage() {
         </div>
         {/* Mobile admin dropdown */}
         {isAdmin && showMobileMenu && (
-          <div className="sm:hidden border-t px-4 py-3 flex flex-col gap-3 bg-background/98">
+          <div className="sm:hidden border-t px-4 py-3 flex flex-col gap-3 bg-background/98 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
               <Settings className="w-3 h-3" /> Admin Controls
             </div>
@@ -1421,7 +1262,7 @@ export default function PortfolioPage() {
                 </Button>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => { setShowChangePw(true); setShowMobileMenu(false); }}>
                 <Lock className="w-3 h-3" /> Password
               </Button>
@@ -1432,13 +1273,6 @@ export default function PortfolioPage() {
                 <RotateCcw className="w-3 h-3" /> Reset
               </Button>
             </div>
-            {features.exploreAccess && (
-            <a href="/explore" className="no-underline">
-              <Button size="sm" variant="outline" className="w-full gap-1 bg-purple-600/10 border-purple-500/30 text-purple-400 hover:bg-purple-600/20" onClick={() => setShowMobileMenu(false)}>
-                <Users className="w-3 h-3" /> Explore Community
-              </Button>
-            </a>
-            )}
             <Button size="sm" variant="ghost" className="text-destructive" onClick={handleLogout}>
               Logout
             </Button>
@@ -1452,7 +1286,7 @@ export default function PortfolioPage() {
         <NexusNavbar
           isAdmin={isAdmin}
           portfolio={portfolio}
-          features={{ cvImportExport: !!features.cvImportExport }}
+          features={{ cvImportExport: !!features.cvImportExport, exploreAccess: !!features.exploreAccess }}
           theme={theme}
           onThemeChange={(t) => setTheme(t as any)}
           onExport={handleExport}
@@ -1843,8 +1677,6 @@ export default function PortfolioPage() {
       </main>
       </>
 
-      {features.aiChat && <AiChat portfolioName={portfolio.name} slug={currentSlug} />}
-
       {/* ── Dialogs ─────────────────────────────────────────────────────── */}
       {/* Change Password */}
       <ChangePasswordDialog open={showChangePw} onClose={() => setShowChangePw(false)} />
@@ -2013,6 +1845,9 @@ export default function PortfolioPage() {
 
       {/* Create Client Dialog */}
       <CreateClientDialog open={showCreateClientDialog} onOpenChange={setShowCreateClientDialog} />
+
+      {/* Floating AI Chat Widget */}
+      {features.aiChat && <FloatingAiChat slug={portfolio.slug} />}
 
       {/* Export Settings Modal */}
       {showExportSettings && (

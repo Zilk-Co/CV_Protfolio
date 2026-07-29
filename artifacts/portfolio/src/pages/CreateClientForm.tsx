@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Check, Plus, ArrowLeft, Loader2, Globe, Lock, User } from "lucide-react";
+import { Check, Plus, ArrowLeft, Loader2, Globe, Lock, User, Bot, Compass, Target, FileText, Sparkles, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api";
 
@@ -18,9 +18,11 @@ export default function CreateClientForm() {
     password: "",
     features: {
       cvImportExport: true,
-      aiChat: true,
       themeSelector: true,
-      blogPage: true
+      blogPage: true,
+      aiChat: true,
+      exploreAccess: false,
+      aiMatchAccess: false
     }
   });
   const [loading, setLoading] = useState(false);
@@ -217,9 +219,11 @@ export default function CreateClientForm() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     { id: 'cvImportExport', label: 'CV Import & Export', icon: FileText },
-                    { id: 'aiChat', label: 'AI Chat Box', icon: MessageCircle },
                     { id: 'themeSelector', label: 'Theme Selector', icon: Sparkles },
                     { id: 'blogPage', label: 'Blog Page', icon: BookOpen },
+                    { id: 'aiChat', label: 'AI Chat Widget', icon: Bot },
+                    { id: 'exploreAccess', label: 'Explore Page', icon: Compass },
+                    { id: 'aiMatchAccess', label: 'AI Match', icon: Target },
                   ].map((feat) => {
                     const Icon = feat.icon;
                     const isEnabled = formData.features[feat.id as keyof typeof formData.features];
