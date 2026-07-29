@@ -14,6 +14,14 @@ export const UpdatePortfolioBody = z.object({
   employmentStatus: z.string().max(50).optional(),
   additionalInfo: z.record(z.string().max(100), z.string().max(1000)).optional(),
   sectionOrder: z.array(z.string().max(100)).max(50).optional(),
+  features: z.object({
+    cvImportExport: z.boolean().optional(),
+    aiChat: z.boolean().optional(),
+    themeSelector: z.boolean().optional(),
+    blogPage: z.boolean().optional(),
+    exploreAccess: z.boolean().optional(),
+    aiMatchAccess: z.boolean().optional(),
+  }).optional(),
 });
 
 export const ChangeLoginUsernameBody = z.object({

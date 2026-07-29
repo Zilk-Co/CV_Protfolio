@@ -46554,7 +46554,15 @@ var UpdatePortfolioBody = objectType({
   status: stringType().max(50).optional(),
   employmentStatus: stringType().max(50).optional(),
   additionalInfo: recordType(stringType().max(100), stringType().max(1e3)).optional(),
-  sectionOrder: arrayType(stringType().max(100)).max(50).optional()
+  sectionOrder: arrayType(stringType().max(100)).max(50).optional(),
+  features: objectType({
+    cvImportExport: booleanType().optional(),
+    aiChat: booleanType().optional(),
+    themeSelector: booleanType().optional(),
+    blogPage: booleanType().optional(),
+    exploreAccess: booleanType().optional(),
+    aiMatchAccess: booleanType().optional()
+  }).optional()
 });
 var ChangeLoginUsernameBody = objectType({
   currentPassword: stringType().min(1).max(128),

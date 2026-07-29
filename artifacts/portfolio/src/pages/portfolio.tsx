@@ -1121,6 +1121,11 @@ export default function PortfolioPage() {
                       <FileText className="w-3 h-3" /> Import CV
                     </Button>
                   )}
+                  {features.exploreAccess && (
+                    <Button size="sm" variant="outline" onClick={() => window.location.href = "/explore"} className="h-7 text-xs gap-1">
+                      <Sparkles className="w-3 h-3" /> Explore
+                    </Button>
+                  )}
                   {isAdminRoute && portfolio?.slug === 'default' && (
                     <div className="flex items-center gap-2 border-l border-r px-2 mx-1 border-border/50">
                       <Button size="sm" variant="outline" onClick={() => setShowCreateClientDialog(true)} className="h-7 text-xs gap-1">
@@ -1191,9 +1196,16 @@ export default function PortfolioPage() {
               </>
             )}
             {!isAdmin && (
-              <Button size="sm" onClick={() => window.location.href = `/login?from=${encodeURIComponent(window.location.pathname)}`} className="h-7 text-xs gap-1">
-                <User className="w-3 h-3" /> Admin Login
-              </Button>
+              <div className="flex items-center gap-2">
+                {features.exploreAccess && (
+                  <Button size="sm" variant="outline" onClick={() => window.location.href = "/explore"} className="h-7 text-xs gap-1">
+                    <Sparkles className="w-3 h-3" /> Explore
+                  </Button>
+                )}
+                <Button size="sm" onClick={() => window.location.href = `/login?from=${encodeURIComponent(window.location.pathname)}`} className="h-7 text-xs gap-1">
+                  <User className="w-3 h-3" /> Admin Login
+                </Button>
+              </div>
             )}
           </div>
         </div>
