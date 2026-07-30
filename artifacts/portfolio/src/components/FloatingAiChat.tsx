@@ -9,9 +9,10 @@ interface Message {
 
 interface FloatingAiChatProps {
   slug: string;
+  name: string;
 }
 
-export function FloatingAiChat({ slug }: FloatingAiChatProps) {
+export function FloatingAiChat({ slug, name }: FloatingAiChatProps) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -142,10 +143,28 @@ export function FloatingAiChat({ slug }: FloatingAiChatProps) {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
+              <div className="text-center py-8 text-muted-foreground">
                 <Bot className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                <p className="font-medium text-sm mb-1">Ask me anything</p>
-                <p className="text-xs">I can tell you about this person's experience, skills, and background.</p>
+                <p className="font-medium text-sm mb-1">Ask me about {name}</p>
+                <p className="text-xs mb-4">I can tell you about their experience, skills, and background.</p>
+                <div className="flex flex-col gap-1.5 px-2">
+                  {[
+                    `Why should I hire ${name}?`,
+                    `What are ${name}'s biggest strengths?`,
+                    `What are ${name}'s weaknesses?`,
+                    `What are ${name}'s top achievements?`,
+                    `Is it worth investing in ${name}?`,
+                    `What roles suit ${name} best?`,
+                  ].map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => { setInput(q); }}
+                      className="text-left text-xs px-3 py-2 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((msg, i) => (

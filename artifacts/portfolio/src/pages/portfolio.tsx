@@ -1836,7 +1836,7 @@ export default function PortfolioPage() {
       <CreateClientDialog open={showCreateClientDialog} onOpenChange={setShowCreateClientDialog} />
 
       {/* Floating AI Chat Widget */}
-      {features.aiChat && <FloatingAiChat slug={portfolio.slug} />}
+      {features.aiChat && <FloatingAiChat slug={portfolio.slug} name={portfolio.name} />}
 
       {/* Export Settings Modal */}
       {showExportSettings && (
