@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import CreateClientForm from "@/pages/CreateClientForm";
 import ClientManagement from "@/pages/ClientManagement";
+import ExplorePage from "@/pages/Explore";
 
 import { setPortfolioSlugGetter, setPortfolioPasswordGetter } from "@workspace/api-client-react";
 
