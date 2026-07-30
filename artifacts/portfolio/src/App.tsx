@@ -29,7 +29,7 @@ setPortfolioSlugGetter(() => {
     return localStorage.getItem("portfolio_slug") || 'default';
   }
   
-  if (first === 'blogs' || first === 'explore') {
+  if (first === 'blogs') {
     return localStorage.getItem("portfolio_slug") || 'default';
   }
   
@@ -55,11 +55,11 @@ function Router() {
     <Switch>
       <Route path="/" component={Portfolio} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/explore" component={ExplorePage} />
       <Route path="/admin" component={Portfolio} />
       <Route path="/admin/clients" component={ClientManagement} />
       <Route path="/admin/create" component={CreateClientForm} />
       <Route path="/admin/:slug" component={Portfolio} />
-      <Route path="/explore" component={ExplorePage} />
       {/* Blog routes MUST come before /:slug to take precedence */}
       <Route path="/blogs" component={BlogsPage} />
       <Route path="/:slug/blogs" component={BlogsPage} />

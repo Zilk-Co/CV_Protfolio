@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Settings, FileText, Download, Lock, LogOut, Users, Sparkles } from "lucide-react";
+import { Menu, X, Settings, FileText, Download, Lock, LogOut, Users, Sparkles, Compass } from "lucide-react";
 
 const NAV_LINKS = [
   { label: "About", href: "#about" },
@@ -32,7 +32,7 @@ export function NexusNavbar({
 }: {
   isAdmin: boolean;
   portfolio: any;
-  features: any;
+  features: { cvImportExport: boolean; exploreAccess?: boolean };
   theme: string;
   onThemeChange: (t: string) => void;
   onExport: () => void;
@@ -91,6 +91,11 @@ export function NexusNavbar({
                     {link.label}
                   </a>
                 ))}
+                {features.exploreAccess && (
+                  <a href="/explore" className="nexus-nav-link">
+                    <Compass className="w-3.5 h-3.5 inline mr-1" /> Explore
+                  </a>
+                )}
               </div>
               {isAdmin && (
                 <div className="nexus-nav-admin">
@@ -182,6 +187,11 @@ export function NexusNavbar({
               <button className="nexus-mobile-btn" onClick={() => { onExport(); setMobileOpen(false); }}>
                 <Download className="w-4 h-4" /> Export CV
               </button>
+              {features.exploreAccess && (
+                <a href="/explore" className="nexus-mobile-btn" onClick={() => setMobileOpen(false)}>
+                  <Compass className="w-4 h-4" /> Explore
+                </a>
+              )}
               <button className="nexus-mobile-btn" onClick={() => { onChangePassword(); setMobileOpen(false); }}>
                 <Lock className="w-4 h-4" /> Password
               </button>

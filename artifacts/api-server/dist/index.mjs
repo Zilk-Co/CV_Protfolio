@@ -1,7 +1,6 @@
 import { createRequire as __bannerCrReq } from 'node:module';
 import __bannerPath from 'node:path';
 import __bannerUrl from 'node:url';
-
 globalThis.require = __bannerCrReq(import.meta.url);
 globalThis.__filename = __bannerUrl.fileURLToPath(import.meta.url);
 globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
@@ -46554,7 +46553,15 @@ var UpdatePortfolioBody = objectType({
   status: stringType().max(50).optional(),
   employmentStatus: stringType().max(50).optional(),
   additionalInfo: recordType(stringType().max(100), stringType().max(1e3)).optional(),
-  sectionOrder: arrayType(stringType().max(100)).max(50).optional()
+  sectionOrder: arrayType(stringType().max(100)).max(50).optional(),
+  features: objectType({
+    cvImportExport: booleanType().optional(),
+    aiChat: booleanType().optional(),
+    themeSelector: booleanType().optional(),
+    blogPage: booleanType().optional(),
+    exploreAccess: booleanType().optional(),
+    aiMatchAccess: booleanType().optional()
+  }).optional()
 });
 var ChangeLoginUsernameBody = objectType({
   currentPassword: stringType().min(1).max(128),
@@ -73206,17 +73213,6 @@ router2.delete("/portfolio/clients/:id", async (req, res) => {
 });
 router2.get("/portfolio/explore", async (req, res) => {
   try {
-    const token = getTokenFromRequest(req);
-    if (!token || !verifyToken(token)) {
-      return res.status(401).json({ error: "Authentication required to access Explore" });
-    }
-    const payload = verifyToken(token);
-    if (payload) {
-      const [requester] = await db.select().from(portfolioTable).where(eq(portfolioTable.id, payload.id)).limit(1);
-      if (requester && requester.features && !requester.features.exploreAccess) {
-        return res.status(403).json({ error: "Explore access is not enabled for your account" });
-      }
-    }
     const currentSlug = req.headers["x-portfolio-slug"] || "default";
     const [currentPortfolio] = await db.select().from(portfolioTable).where(eq(portfolioTable.slug, currentSlug)).limit(1);
     const currentPortfolioId = currentPortfolio?.id || 0;
@@ -73269,17 +73265,6 @@ router2.get("/portfolio/explore", async (req, res) => {
 });
 router2.post("/portfolio/explore/match", async (req, res) => {
   try {
-    const token = getTokenFromRequest(req);
-    if (!token || !verifyToken(token)) {
-      return res.status(401).json({ error: "Authentication required to use AI Match" });
-    }
-    const payload = verifyToken(token);
-    if (payload) {
-      const [requester] = await db.select().from(portfolioTable).where(eq(portfolioTable.id, payload.id)).limit(1);
-      if (requester && requester.features && !requester.features.aiMatchAccess) {
-        return res.status(403).json({ error: "AI Match access is not enabled for your account" });
-      }
-    }
     const { jobDescription } = req.body;
     if (!jobDescription || typeof jobDescription !== "string") {
       return res.status(400).json({ error: "jobDescription is required" });

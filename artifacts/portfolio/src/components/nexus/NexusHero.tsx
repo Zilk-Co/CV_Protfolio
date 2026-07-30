@@ -1,14 +1,57 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Download, User, Upload, ImageOff } from "lucide-react";
+import { ArrowRight, Download, User, Upload, ImageOff, Pencil, Check, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import type { Portfolio } from "@workspace/api-client-react";
 
-const TITLES = [
-  "Finance Student",
-  "ACCA Candidate",
-  "Future Financial Analyst",
-  "Tech Enthusiast",
-];
+function buildTitles(portfolio: Portfolio): string[] {
+  const titles: string[] = [];
+  if (portfolio.title) titles.push(portfolio.title);
+  const skillCategories = [...new Set((portfolio.skills || []).map((s: any) => s.category).filter(Boolean))];
+  for (const cat of skillCategories.slice(0, 3)) titles.push(cat);
+  if (titles.length === 0) titles.push("Professional", "Creative Thinker", "Problem Solver");
+  return titles;
+}
+
+function InlineEditHero({ value, onSave, className = "" }: {
+  value: string; onSave: (v: string) => void; className?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  useEffect(() => { setDraft(value); }, [value]);
+  const commit = () => { onSave(draft); setEditing(false); };
+  const cancel = () => { setDraft(value); setEditing(false); };
+  const plainText = value?.replace(/<[^>]*>/g, "").trim() || "";
+  if (!editing) return (
+    <span className={`group relative cursor-pointer hover:opacity-80 ${className}`} onClick={() => setEditing(true)} title="Click to edit">
+      {plainText ? (
+        <span dangerouslySetInnerHTML={{ __html: value }} />
+      ) : (
+        <span className="opacity-40">Click to edit...</span>
+      )}
+      <Pencil className="inline ml-1 w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+    </span>
+  );
+  return (
+    <div className="w-full">
+      <textarea
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        rows={3}
+        className="w-full rounded-lg border border-border bg-background text-foreground p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+        autoFocus
+      />
+      <div className="flex items-center gap-2 mt-2">
+        <button onClick={commit} className="flex items-center gap-1 px-3 py-1 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700">
+          <Check className="w-3 h-3" /> Save
+        </button>
+        <button onClick={cancel} className="flex items-center gap-1 px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80">
+          <X className="w-3 h-3" /> Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function NexusHero({
   portfolio,
@@ -16,6 +59,7 @@ export function NexusHero({
   onPhotoClick,
   onRemovePhoto,
   onExport,
+  onFieldSave,
   features,
 }: {
   portfolio: Portfolio;
@@ -23,8 +67,10 @@ export function NexusHero({
   onPhotoClick: () => void;
   onRemovePhoto: () => void;
   onExport: () => void;
+  onFieldSave?: (field: Record<string, any>) => void;
   features: { cvImportExport: boolean };
 }) {
+  const titles = buildTitles(portfolio);
   const [titleIdx, setTitleIdx] = useState(0);
   const [displayed, setDisplayed] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -32,7 +78,7 @@ export function NexusHero({
   const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const target = TITLES[titleIdx];
+    const target = titles[titleIdx] || "Professional";
     let timer: ReturnType<typeof setTimeout>;
     if (!deleting) {
       if (displayed.length < target.length) {
@@ -45,11 +91,11 @@ export function NexusHero({
         timer = setTimeout(() => setDisplayed(displayed.slice(0, -1)), 30);
       } else {
         setDeleting(false);
-        setTitleIdx((i) => (i + 1) % TITLES.length);
+        setTitleIdx((i) => (i + 1) % titles.length);
       }
     }
     return () => clearTimeout(timer);
-  }, [displayed, deleting, titleIdx]);
+  }, [displayed, deleting, titleIdx, titles]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!heroRef.current) return;
@@ -116,15 +162,23 @@ export function NexusHero({
             <span className="nexus-typewriter-cursor">|</span>
           </div>
 
-          <motion.p
+          <motion.div
             className="nexus-hero-bio"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.8 }}
           >
-            Passionate about Finance, Technology and Building Modern Solutions.
-            Currently pursuing ACCA while creating impactful digital experiences.
-          </motion.p>
+            {isAdmin && onFieldSave ? (
+              <InlineEditHero
+                value={portfolio.about || ""}
+                onSave={(v) => onFieldSave({ about: v })}
+              />
+            ) : portfolio.about ? (
+              <span dangerouslySetInnerHTML={{ __html: portfolio.about }} />
+            ) : (
+              "Passionate about building impactful digital experiences."
+            )}
+          </motion.div>
 
           <motion.div
             className="nexus-hero-buttons"
@@ -147,16 +201,16 @@ export function NexusHero({
             transition={{ delay: 0.8, duration: 0.7 }}
           >
             <div className="nexus-stat-card">
-              <div className="nexus-stat-value">8</div>
-              <div className="nexus-stat-label">ACCA Papers</div>
+              <div className="nexus-stat-value">{(portfolio.skills || []).length || 0}</div>
+              <div className="nexus-stat-label">Skills</div>
             </div>
             <div className="nexus-stat-card">
-              <div className="nexus-stat-value">{(portfolio.experience || []).length || 12}</div>
-              <div className="nexus-stat-label">Projects</div>
+              <div className="nexus-stat-value">{(portfolio.experience || []).length || 0}</div>
+              <div className="nexus-stat-label">Experiences</div>
             </div>
             <div className="nexus-stat-card">
-              <div className="nexus-stat-value">{portfolio.location?.split(",")[0] || "Karachi"}</div>
-              <div className="nexus-stat-label">{portfolio.location?.split(",")[1]?.trim() || "Pakistan"}</div>
+              <div className="nexus-stat-value">{portfolio.location?.split(",")[0] || "Location"}</div>
+              <div className="nexus-stat-label">{portfolio.location?.split(",")[1]?.trim() || ""}</div>
             </div>
           </motion.div>
         </motion.div>

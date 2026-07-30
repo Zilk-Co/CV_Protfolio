@@ -7,17 +7,18 @@ import {
   ChevronLeft, 
   Search, 
   FileText, 
-  MessageCircle, 
   Sparkles, 
   BookOpen,
+  Bot,
+  Compass,
+  Target,
   Check,
   X,
   Lock,
   ArrowRight,
   ShieldAlert,
   Loader2,
-  Globe,
-  Bot
+  Globe
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,9 +27,9 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ClientFeatures {
   cvImportExport: boolean;
-  aiChat: boolean;
   themeSelector: boolean;
   blogPage: boolean;
+  aiChat: boolean;
   exploreAccess: boolean;
   aiMatchAccess: boolean;
 }
@@ -114,7 +115,7 @@ export default function ClientManagement() {
 
   const handleUpdateFeatures = async (client: Client, newFeatures: ClientFeatures) => {
     try {
-      const response = await fetch(`/api/portfolio/clients/${client.id}`, {
+      const response = await apiFetch(`/api/portfolio/clients/${client.id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -137,7 +138,7 @@ export default function ClientManagement() {
     if (!newPassword) { toast({ variant: "destructive", title: "Error", description: "Enter a new password." }); return; }
     setPasswordLoading(true);
     try {
-      const res = await fetch(`/api/portfolio/clients/${client.id}/password`, {
+      const res = await apiFetch(`/api/portfolio/clients/${client.id}/password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -163,7 +164,7 @@ export default function ClientManagement() {
     
     setIsDeleting(id);
     try {
-      const response = await fetch(`/api/portfolio/clients/${id}`, {
+      const response = await apiFetch(`/api/portfolio/clients/${id}`, {
         method: "DELETE",
         headers: { "x-admin-password": adminPassword }
       });
@@ -258,7 +259,6 @@ export default function ClientManagement() {
           {[
             { label: 'Total Clients', val: clients.length, color: 'blue' },
             { label: 'Active Plans', val: clients.filter(c => c.status === 'open').length, color: 'emerald' },
-            { label: 'AI Enabled', val: clients.filter(c => c.features.aiChat).length, color: 'purple' },
             { label: 'Blog Enabled', val: clients.filter(c => c.features.blogPage).length, color: 'orange' },
           ].map((stat, i) => (
             <div key={i} className="bg-slate-900/40 border border-slate-800 p-4 rounded-2xl">
@@ -326,11 +326,11 @@ export default function ClientManagement() {
                       <div className="flex gap-1.5 flex-wrap">
                         {[
                           { key: 'cvImportExport', icon: FileText, label: 'CV' },
-                          { key: 'aiChat', icon: MessageCircle, label: 'AI Chat' },
                           { key: 'themeSelector', icon: Sparkles, label: 'Themes' },
                           { key: 'blogPage', icon: BookOpen, label: 'Blog' },
-                          { key: 'exploreAccess', icon: Globe, label: 'Explore' },
-                          { key: 'aiMatchAccess', icon: Bot, label: 'AI Match' },
+                          { key: 'aiChat', icon: Bot, label: 'AI Chat' },
+                          { key: 'exploreAccess', icon: Compass, label: 'Explore' },
+                          { key: 'aiMatchAccess', icon: Target, label: 'AI Match' },
                         ].map((f) => {
                           const Icon = f.icon;
                           const active = client.features[f.key as keyof ClientFeatures];
@@ -401,11 +401,11 @@ export default function ClientManagement() {
             <div className="space-y-3">
               {[
                 { id: 'cvImportExport', label: 'CV Import & Export', icon: FileText, desc: 'Allow PDF imports and resume JSON exports' },
-                { id: 'aiChat', label: 'AI Chat Box', icon: MessageCircle, desc: 'Enable floating AI assistant for visitors' },
                 { id: 'themeSelector', label: 'Theme Selector', icon: Sparkles, desc: 'Allow user to swap between themes' },
                 { id: 'blogPage', label: 'Blog Page', icon: BookOpen, desc: 'Enable the dedicated blogs section' },
-                { id: 'exploreAccess', label: 'Explore Page', icon: Globe, desc: 'Allow access to the Explore community page' },
-                { id: 'aiMatchAccess', label: 'AI Recruiter Match', icon: Bot, desc: 'Allow access to the AI recruitment matching tool' },
+                { id: 'aiChat', label: 'AI Chat Widget', icon: Bot, desc: 'Floating AI assistant on portfolio page' },
+                { id: 'exploreAccess', label: 'Explore Page', icon: Compass, desc: 'Allow access to the community explore page' },
+                { id: 'aiMatchAccess', label: 'AI Match (Explore)', icon: Target, desc: 'AI-powered candidate matching in Explore' },
               ].map((feat) => {
                 const Icon = feat.icon;
                 const active = editingClient.features[feat.id as keyof ClientFeatures];

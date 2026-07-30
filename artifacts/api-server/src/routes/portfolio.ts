@@ -983,25 +983,9 @@ router.delete("/portfolio/clients/:id", async (req, res) => {
   }
 });
 
-// ─── PUBLIC: Explore ──────────────────────────────────────────────────────
-// ─── EXPLORE: Get all profiles + blogs (requires valid JWT) ──────────────
+// ─── PUBLIC: Explore (no auth required) ──────────────────────────────────
 router.get("/portfolio/explore", async (req, res) => {
   try {
-    // Require valid JWT to access explore
-    const token = getTokenFromRequest(req);
-    if (!token || !verifyToken(token)) {
-      return res.status(401).json({ error: "Authentication required to access Explore" });
-    }
-
-    // Check that the requesting user's portfolio has exploreAccess enabled
-    const payload = verifyToken(token);
-    if (payload) {
-      const [requester] = await db.select().from(portfolioTable).where(eq(portfolioTable.id, payload.id)).limit(1);
-      if (requester && requester.features && !(requester.features as any).exploreAccess) {
-        return res.status(403).json({ error: "Explore access is not enabled for your account" });
-      }
-    }
-
     const currentSlug = (req.headers["x-portfolio-slug"] || "default") as string;
     const [currentPortfolio] = await db.select().from(portfolioTable).where(eq(portfolioTable.slug, currentSlug)).limit(1);
     const currentPortfolioId = currentPortfolio?.id || 0;
@@ -1057,24 +1041,9 @@ router.get("/portfolio/explore", async (req, res) => {
   }
 });
 
-// ─── AI Job Matching (Explore) ───────────────────────────────────────────────
+// ─── AI Job Matching (Explore) — public, no auth required ────────────────
 router.post("/portfolio/explore/match", async (req, res) => {
   try {
-    // Require valid JWT to access AI match
-    const token = getTokenFromRequest(req);
-    if (!token || !verifyToken(token)) {
-      return res.status(401).json({ error: "Authentication required to use AI Match" });
-    }
-
-    // Check that the requesting user's portfolio has aiMatchAccess enabled
-    const payload = verifyToken(token);
-    if (payload) {
-      const [requester] = await db.select().from(portfolioTable).where(eq(portfolioTable.id, payload.id)).limit(1);
-      if (requester && requester.features && !(requester.features as any).aiMatchAccess) {
-        return res.status(403).json({ error: "AI Match access is not enabled for your account" });
-      }
-    }
-
     const { jobDescription } = req.body;
     if (!jobDescription || typeof jobDescription !== "string") {
       return res.status(400).json({ error: "jobDescription is required" });

@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Link } from "wouter";
 import { apiFetch } from "@/lib/api";
-import { useGetPortfolio } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,28 +13,11 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 export default function ExplorePage() {
-
-  // Auth state — explore requires login every visit (no persistence)
-  const [token, setToken] = useState<string | null>(null);
-  const [slug, setSlug] = useState<string>("default");
-  const [loginUsername, setLoginUsername] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
-
-  // All remaining hooks MUST be declared before any early return
-  const { data: portfolio } = useGetPortfolio({
-    query: { queryKey: ["portfolio", slug], enabled: !!token }
-  });
-
-  const hasExploreAccess = (portfolio as any)?.features?.exploreAccess === true;
-  const hasAiMatchAccess = (portfolio as any)?.features?.aiMatchAccess === true;
-
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<"profiles" | "blogs" | "ai-match">("profiles");
   const [profiles, setProfiles] = useState<any[]>([]);
   const [blogs, setBlogs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // AI Chat state
   const [aiMessages, setAiMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
@@ -44,20 +26,14 @@ export default function ExplorePage() {
   const aiChatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!token) return;
     const fetchData = async () => {
       setLoading(true);
       try {
         const response = await apiFetch("/api/portfolio/explore", {
           headers: {
-            "x-portfolio-slug": slug,
-            Authorization: `Bearer ${token}`,
+            "x-portfolio-slug": "default",
           },
         });
-        if (response.status === 401) {
-          setToken(null);
-          return;
-        }
         if (response.ok) {
           const data = await response.json();
           setProfiles(data.profiles || []);
@@ -70,14 +46,13 @@ export default function ExplorePage() {
       }
     };
     fetchData();
-  }, [slug, token]);
+  }, []);
 
   const filteredProfiles = useMemo(() => {
     if (!profiles) return [];
     const terms = searchTerm.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
     let filtered = profiles.filter(p => {
-      if (p.slug === slug) return false;
       if (terms.length === 0) return true;
 
       const searchable = [
@@ -91,17 +66,8 @@ export default function ExplorePage() {
       return terms.every(term => searchable.includes(term));
     });
 
-    filtered = filtered.map(p => {
-      let score = 0;
-      if (portfolio?.title && p.title && portfolio.title.toLowerCase() === p.title.toLowerCase()) score += 100;
-      const userSkillsSet = new Set((portfolio?.skills || []).map((s: any) => s.name?.toLowerCase()));
-      const matchingSkills = (p.skills || []).filter((s: any) => userSkillsSet.has(s.name?.toLowerCase())).length;
-      score += matchingSkills * 10;
-      return { ...p, matchScore: score };
-    });
-
     return filtered.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
-  }, [profiles, searchTerm, portfolio, slug]);
+  }, [profiles, searchTerm]);
 
   const filteredBlogs = useMemo(() => {
     if (!blogs) return [];
@@ -133,7 +99,6 @@ export default function ExplorePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ jobDescription: msg }),
       });
@@ -177,89 +142,12 @@ export default function ExplorePage() {
       setAiMessages(prev => [...prev, { role: "assistant", content: "Network error. Please try again." }]);
     }
     setAiLoading(false);
-  }, [aiInput, aiLoading, token]);
-
-  const handleExploreLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!loginUsername || !loginPassword) { setLoginError("Enter username and password"); return; }
-    setLoginLoading(true);
-    setLoginError("");
-    try {
-      const res = await apiFetch("/api/portfolio/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: loginUsername, password: loginPassword }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Login failed");
-      setSlug(data.slug);
-      setToken(data.token);
-    } catch (err: any) {
-      setLoginError(err.message || "Invalid credentials");
-    } finally {
-      setLoginLoading(false);
-    }
-  };
-
-  // Not logged in — show login form (no hooks after this point)
-  if (!token) {
-    return (
-      <div className="portfolio-root min-h-screen pt-16 pb-8 flex items-center justify-center">
-        <div className="max-w-md w-full mx-4">
-          <div className="section-card rounded-2xl p-8">
-            <div className="text-center mb-6">
-              <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Lock className="w-7 h-7 text-primary" />
-              </div>
-              <h1 className="text-2xl font-bold">Explore Access</h1>
-              <p className="text-muted-foreground text-sm mt-1">Sign in with your portfolio account to explore the community</p>
-            </div>
-            <form onSubmit={handleExploreLogin} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Username</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input className="pl-9" placeholder="Your login username" value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} autoFocus />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input type="password" className="pl-9" placeholder="Your password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
-                </div>
-              </div>
-              {loginError && <p className="text-sm text-destructive font-medium">{loginError}</p>}
-              <Button type="submit" className="w-full" disabled={loginLoading}>
-                {loginLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {loginLoading ? "Signing in..." : "Sign in to Explore"}
-              </Button>
-            </form>
-            <Button variant="ghost" className="w-full mt-2 text-muted-foreground" onClick={() => window.history.back()}>← Go back</Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  }, [aiInput, aiLoading]);
 
   return (
     <div className="portfolio-root min-h-screen pt-16 pb-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        {/* Access Denied */}
-        {hasExploreAccess === false && portfolio && (
-          <div className="text-center py-24">
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Access Restricted</h2>
-            <p className="text-muted-foreground mb-6">You don't have permission to access the Explore page. Contact the admin to enable this feature.</p>
-            <Button variant="outline" onClick={() => window.history.back()}>Go Back</Button>
-          </div>
-        )}
-
         {/* Header */}
-        {hasExploreAccess !== false && (
-        <>
         <div className="mb-8">
           <Button variant="ghost" size="sm" className="gap-2 mb-4" onClick={() => window.history.back()}>
             <ArrowLeft className="w-4 h-4" />
@@ -290,7 +178,7 @@ export default function ExplorePage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "profiles" | "blogs" | "ai-match")} className="w-full">
-          <TabsList className={`grid w-full mb-6 ${hasAiMatchAccess ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          <TabsList className="grid w-full mb-6 grid-cols-3">
             <TabsTrigger value="profiles" className="gap-2">
               <Users className="w-4 h-4" />
               Profiles ({filteredProfiles.length})
@@ -299,12 +187,10 @@ export default function ExplorePage() {
               <BookOpen className="w-4 h-4" />
               Blogs ({filteredBlogs.length})
             </TabsTrigger>
-            {hasAiMatchAccess && (
-              <TabsTrigger value="ai-match" className="gap-2">
-                <Bot className="w-4 h-4" />
-                AI Match
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="ai-match" className="gap-2">
+              <Bot className="w-4 h-4" />
+              AI Match
+            </TabsTrigger>
           </TabsList>
 
           {/* Profiles Tab */}
@@ -323,22 +209,22 @@ export default function ExplorePage() {
                     <div className="absolute top-3 right-3">
                       {profile.employmentStatus === "hiring" && (
                         <div className="px-3 py-1 bg-green-500/20 border border-green-500/50 rounded-full text-xs font-semibold text-green-600 dark:text-green-400">
-                          🔥 Hiring
+                          Hiring
                         </div>
                       )}
                       {profile.employmentStatus === "available" && (
                         <div className="px-3 py-1 bg-blue-500/20 border border-blue-500/50 rounded-full text-xs font-semibold text-blue-600 dark:text-blue-400">
-                          ✓ Available
+                          Available
                         </div>
                       )}
                       {profile.employmentStatus === "open" && (
                         <div className="px-3 py-1 bg-purple-500/20 border border-purple-500/50 rounded-full text-xs font-semibold text-purple-600 dark:text-purple-400">
-                          👋 Open to Opportunities
+                          Open to Opportunities
                         </div>
                       )}
                       {profile.employmentStatus === "employed" && (
                         <div className="px-3 py-1 bg-gray-500/20 border border-gray-500/50 rounded-full text-xs font-semibold text-gray-600 dark:text-gray-400">
-                          💼 Currently Employed
+                          Employed
                         </div>
                       )}
                     </div>
@@ -411,7 +297,6 @@ export default function ExplorePage() {
           {/* AI Match Tab */}
           <TabsContent value="ai-match" className="space-y-4">
             <div className="section-card rounded-xl overflow-hidden">
-              {/* AI Chat header */}
               <div className="p-4 border-b flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Bot className="w-5 h-5 text-primary" />
@@ -422,8 +307,7 @@ export default function ExplorePage() {
                 </div>
               </div>
 
-              {/* Messages */}
-              <div className="h-[400px] overflow-y-auto p-4 space-y-4">
+              <div className="h-[60vh] max-h-[400px] overflow-y-auto p-4 space-y-4">
                 {aiMessages.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -477,7 +361,6 @@ export default function ExplorePage() {
                 <div ref={aiChatEndRef} />
               </div>
 
-              {/* Input */}
               <div className="p-4 border-t">
                 <div className="flex gap-2">
                   <Input
@@ -495,8 +378,6 @@ export default function ExplorePage() {
             </div>
           </TabsContent>
         </Tabs>
-        </>
-        )}
       </div>
     </div>
   );
