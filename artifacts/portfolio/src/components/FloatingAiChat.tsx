@@ -41,11 +41,13 @@ export function FloatingAiChat({ slug }: FloatingAiChatProps) {
       // Create conversation if needed
       let convId = conversationId;
       if (!convId) {
+        const token = localStorage.getItem("portfolio_token");
         const createRes = await apiFetch("/api/portfolio/openai/conversations", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "x-portfolio-slug": slug,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({ title: msg.slice(0, 60) }),
         });
@@ -55,11 +57,13 @@ export function FloatingAiChat({ slug }: FloatingAiChatProps) {
       }
 
       // Send message (SSE stream)
+      const token = localStorage.getItem("portfolio_token");
       const res = await apiFetch(`/api/portfolio/openai/conversations/${convId}/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-portfolio-slug": slug,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ content: msg }),
       });
