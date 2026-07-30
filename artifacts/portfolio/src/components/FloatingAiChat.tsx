@@ -42,7 +42,7 @@ export function FloatingAiChat({ slug }: FloatingAiChatProps) {
       let convId = conversationId;
       if (!convId) {
         const token = localStorage.getItem("portfolio_token");
-        const createRes = await apiFetch("/api/portfolio/openai/conversations", {
+        const createRes = await apiFetch("/api/openai/conversations", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -58,7 +58,7 @@ export function FloatingAiChat({ slug }: FloatingAiChatProps) {
 
       // Send message (SSE stream)
       const token = localStorage.getItem("portfolio_token");
-      const res = await apiFetch(`/api/portfolio/openai/conversations/${convId}/messages`, {
+      const res = await apiFetch(`/api/openai/conversations/${convId}/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
