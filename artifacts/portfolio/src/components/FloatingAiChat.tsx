@@ -184,7 +184,7 @@ export function FloatingAiChat({ slug, name }: FloatingAiChatProps) {
                   {msg.role === "user" ? (
                     msg.content
                   ) : msg.content ? (
-                    <span className="whitespace-pre-wrap">{msg.content}</span>
+                    <span className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: msg.content }} />
                   ) : loading && i === messages.length - 1 ? (
                     <div className="flex items-center gap-1 py-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "0ms" }} />

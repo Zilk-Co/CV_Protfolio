@@ -73437,7 +73437,9 @@ CRITICAL RULES for skills extraction:
 - Do NOT use generic "Technical" or "Other" \u2014 be precise and domain-specific
 - Every skill MUST have a meaningful category name that fits the CV's industry
 
-Return ONLY this JSON structure, no markdown, no extra text:
+CRITICAL: You MUST return ONLY valid JSON. No markdown, no code fences, no extra text, no explanation before or after. Just the raw JSON object.
+
+Return ONLY this JSON structure:
 {
   "name": "string",
   "title": "string - professional title/role",
@@ -73480,7 +73482,9 @@ Return ONLY this JSON structure, no markdown, no extra text:
       "date": "string or null"
     }
   ]
-}`
+}
+
+IMPORTANT: Start your response with { and end with }. Nothing else.`
             },
             {
               role: "user",
@@ -73523,6 +73527,10 @@ ${text2}`
       }
       if (!parsed) throw new Error("Could not extract valid JSON");
     }
+    if (!Array.isArray(parsed.education)) parsed.education = [];
+    if (!Array.isArray(parsed.experience)) parsed.experience = [];
+    if (!Array.isArray(parsed.skills)) parsed.skills = [];
+    if (!Array.isArray(parsed.certifications)) parsed.certifications = [];
     res.json(parsed);
   } catch (err) {
     req.log.error({ err }, "Failed to extract CV");
@@ -73721,8 +73729,9 @@ STRICT RULES \u2014 YOU MUST FOLLOW:
 - NEVER generate harmful, inappropriate, or misleading content.
 
 HOW TO ANSWER:
+- ALWAYS use bullet points for listing things. Format answers as numbered or bulleted lists.
+- Use <strong>HTML bold tags</strong> for emphasis \u2014 NEVER use markdown asterisks like **bold**. The viewer sees raw HTML, not rendered markdown.
 - Be concise but not robotic. Write like a smart human, not a FAQ page.
-- Use bullet points for lists, but write in full sentences for analysis/opinions.
 - Don't start every response with "${name} is..." \u2014 vary your openings.
 - If a question deserves a one-line answer, give one line. If it deserves analysis, give analysis.
 - You're not a salesperson. Don't oversell. Be honest and balanced.

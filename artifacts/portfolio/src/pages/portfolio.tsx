@@ -284,25 +284,53 @@ function getAuthHeaders(): Record<string, string> {
 // ─── CV Import ────────────────────────────────────────────────────────────
 function CvImportModal({ open, onClose, onImport }: { open: boolean; onClose: () => void; onImport: (data: Record<string, unknown>) => Promise<void> }) {
   const [text, setText] = useState("");
-  const [status, setStatus] = useState<"idle" | "extracting" | "importing" | "done">("idle");
+  const [status, setStatus] = useState<"idle" | "extracting" | "importing" | "done" | "error">("idle");
+  const [statusText, setStatusText] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
   const extractCv = useExtractCv();
 
-  const handleImport = async () => {
+  const handleImport = async (isRetry = false) => {
     if (!text.trim()) return;
     setStatus("extracting");
+    setStatusText("Sending CV to AI for analysis...");
     try {
+      setStatusText("AI is parsing your CV — identifying sections...");
       const r = await extractCv.mutateAsync({ data: { text } });
+      setStatusText("CV parsed successfully! Saving experience, education, skills...");
       setStatus("importing");
       await onImport(r as Record<string, unknown>);
+      setStatusText("All done!");
       setStatus("done");
-      setTimeout(() => { setText(""); setStatus("idle"); onClose(); }, 1200);
-    } catch {
-      setStatus("idle");
+      setRetryCount(0);
+      setTimeout(() => { setText(""); setStatus("idle"); setStatusText(""); onClose(); }, 1500);
+    } catch (err) {
+      console.error("CV import error:", err);
+      if (!isRetry && retryCount < 2) {
+        setRetryCount(prev => prev + 1);
+        setStatusText(`Retrying... (attempt ${retryCount + 2} of 3)`);
+        setStatus("extracting");
+        try {
+          const r = await extractCv.mutateAsync({ data: { text } });
+          setStatusText("CV parsed on retry! Saving...");
+          setStatus("importing");
+          await onImport(r as Record<string, unknown>);
+          setStatusText("All done!");
+          setStatus("done");
+          setRetryCount(0);
+          setTimeout(() => { setText(""); setStatus("idle"); setStatusText(""); onClose(); }, 1500);
+          return;
+        } catch {
+          // fall through to error
+        }
+      }
+      setStatusText("Import failed. Please check your CV text and try again.");
+      setStatus("error");
+      setRetryCount(0);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o && status === "idle") { setText(""); onClose(); } }}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o && status === "idle") { setText(""); setStatus(""); setStatusText(""); onClose(); } }}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><FileText className="w-4 h-4" /> Import from CV</DialogTitle>
@@ -314,15 +342,23 @@ function CvImportModal({ open, onClose, onImport }: { open: boolean; onClose: ()
             <span><strong>This replaces all existing data.</strong> Your current experience, education, skills, and certifications will be deleted and replaced with data from this CV.</span>
           </div>
           <p className="text-sm text-muted-foreground">Paste your full CV text. AI will parse every field with precision and create skill categories automatically.</p>
-          <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste your full CV / resume text here..." className="min-h-[220px] font-mono text-xs" disabled={status !== "idle"} />
+          <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste your full CV / resume text here..." className="min-h-[220px] font-mono text-xs" disabled={status !== "idle" && status !== "error"} />
+          {statusText && (
+            <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg ${status === "error" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+              {(status === "extracting" || status === "importing") && <Loader2 className="w-3 h-3 animate-spin" />}
+              {status === "done" && <Check className="w-3 h-3" />}
+              {status === "error" && <X className="w-3 h-3" />}
+              {statusText}
+            </div>
+          )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => { setText(""); setStatus("idle"); onClose(); }} disabled={status !== "idle" && status !== "done"}>Cancel</Button>
-          <Button onClick={handleImport} disabled={!text.trim() || status !== "idle"} className="gap-2">
-            {status === "extracting" && <><Loader2 className="w-4 h-4 animate-spin" /> Extracting with AI...</>}
-            {status === "importing" && <><Loader2 className="w-4 h-4 animate-spin" /> Saving data...</>}
+          <Button variant="outline" onClick={() => { setText(""); setStatus("idle"); setStatusText(""); onClose(); }} disabled={status === "extracting" || status === "importing"}>Cancel</Button>
+          <Button onClick={() => handleImport(false)} disabled={!text.trim() || status === "extracting" || status === "importing" || status === "done"} className="gap-2">
+            {status === "extracting" && <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</>}
+            {status === "importing" && <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>}
             {status === "done" && <><Check className="w-4 h-4" /> Imported!</>}
-            {status === "idle" && "Extract & Replace"}
+            {(status === "idle" || status === "error") && "Extract & Replace"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -773,7 +809,7 @@ export default function PortfolioPage() {
     saveFn: (idA: number, oA: number, idB: number, oB: number) => void
   ) => {
     const a = items[idxA], b = items[idxB];
-    const oA = a.orderIndex, oB = b.orderIndex;
+    const oA = idxB, oB = idxA;
     qc.setQueryData(getGetPortfolioQueryKey(), (old: Portfolio | undefined) => {
       if (!old) return old;
       if (cacheKey.startsWith("custom_")) {

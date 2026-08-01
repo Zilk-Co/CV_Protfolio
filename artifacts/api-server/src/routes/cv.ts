@@ -57,7 +57,9 @@ CRITICAL RULES for skills extraction:
 - Do NOT use generic "Technical" or "Other" — be precise and domain-specific
 - Every skill MUST have a meaningful category name that fits the CV's industry
 
-Return ONLY this JSON structure, no markdown, no extra text:
+CRITICAL: You MUST return ONLY valid JSON. No markdown, no code fences, no extra text, no explanation before or after. Just the raw JSON object.
+
+Return ONLY this JSON structure:
 {
   "name": "string",
   "title": "string - professional title/role",
@@ -100,7 +102,9 @@ Return ONLY this JSON structure, no markdown, no extra text:
       "date": "string or null"
     }
   ]
-}`,
+}
+
+IMPORTANT: Start your response with { and end with }. Nothing else.`,
             },
             {
               role: "user",
@@ -138,6 +142,10 @@ Return ONLY this JSON structure, no markdown, no extra text:
       }
       if (!parsed) throw new Error("Could not extract valid JSON");
     }
+    if (!Array.isArray(parsed.education)) parsed.education = [];
+    if (!Array.isArray(parsed.experience)) parsed.experience = [];
+    if (!Array.isArray(parsed.skills)) parsed.skills = [];
+    if (!Array.isArray(parsed.certifications)) parsed.certifications = [];
     res.json(parsed);
   } catch (err) {
     req.log.error({ err }, "Failed to extract CV");
