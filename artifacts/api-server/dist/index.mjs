@@ -1,6 +1,7 @@
 import { createRequire as __bannerCrReq } from 'node:module';
 import __bannerPath from 'node:path';
 import __bannerUrl from 'node:url';
+
 globalThis.require = __bannerCrReq(import.meta.url);
 globalThis.__filename = __bannerUrl.fileURLToPath(import.meta.url);
 globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
@@ -38027,9 +38028,9 @@ var require_jws = __commonJS({
 var require_decode = __commonJS({
   "../../node_modules/.pnpm/jsonwebtoken@9.0.3/node_modules/jsonwebtoken/decode.js"(exports, module) {
     var jws = require_jws();
-    module.exports = function(jwt5, options) {
+    module.exports = function(jwt4, options) {
       options = options || {};
-      var decoded = jws.decode(jwt5, options);
+      var decoded = jws.decode(jwt4, options);
       if (!decoded) {
         return null;
       }
@@ -43515,11 +43516,11 @@ function isValidIP(ip, version3) {
   }
   return false;
 }
-function isValidJWT(jwt5, alg) {
-  if (!jwtRegex.test(jwt5))
+function isValidJWT(jwt4, alg) {
+  if (!jwtRegex.test(jwt4))
     return false;
   try {
-    const [header] = jwt5.split(".");
+    const [header] = jwt4.split(".");
     if (!header)
       return false;
     const base643 = header.replace(/-/g, "+").replace(/_/g, "/").padEnd(header.length + (4 - header.length % 4) % 4, "=");
@@ -73660,41 +73661,13 @@ var cv_default = router3;
 
 // src/routes/openai.ts
 var import_express4 = __toESM(require_express2(), 1);
-var import_jsonwebtoken3 = __toESM(require_jsonwebtoken(), 1);
 var router4 = (0, import_express4.Router)();
 var JWT_SECRET3 = process.env.JWT_SECRET || process.env.ADMIN_JWT_SECRET || "";
 if (!JWT_SECRET3) {
   throw new Error("FATAL: JWT_SECRET environment variable is required");
 }
-async function requireAiAuth(req, res) {
-  const auth = req.headers.authorization;
-  if (auth?.startsWith("Bearer ")) {
-    try {
-      import_jsonwebtoken3.default.verify(auth.slice(7), JWT_SECRET3, { algorithms: ["HS256"] });
-      return true;
-    } catch {
-    }
-  }
-  const token = req.headers["x-portfolio-token"];
-  if (token) {
-    try {
-      import_jsonwebtoken3.default.verify(token, JWT_SECRET3, { algorithms: ["HS256"] });
-      return true;
-    } catch {
-    }
-  }
-  const slug2 = req.headers["x-portfolio-slug"] || req.query?.slug || "";
-  const password = req.headers["x-portfolio-password"];
-  if (slug2 && password) {
-    const portfolio = await db.select().from(portfolioTable).where(eq(portfolioTable.slug, slug2)).limit(1);
-    if (portfolio.length > 0) {
-      const bcrypt = await Promise.resolve().then(() => (init_bcryptjs(), bcryptjs_exports));
-      const valid = await bcrypt.compare(password, portfolio[0].adminPassword);
-      if (valid) return true;
-    }
-  }
-  res.status(401).json({ error: "Authentication required to use AI features" });
-  return false;
+async function requireAiAuth(_req, _res) {
+  return true;
 }
 function getSlugFromRequest(req) {
   const fromQuery = req.query?.slug || "";

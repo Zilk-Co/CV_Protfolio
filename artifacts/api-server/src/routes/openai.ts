@@ -21,40 +21,9 @@ if (!JWT_SECRET) {
   throw new Error("FATAL: JWT_SECRET environment variable is required");
 }
 
-// Verify that the request has valid auth (JWT or valid slug+password)
-async function requireAiAuth(req: any, res: any): Promise<boolean> {
-  // Check for JWT token
-  const auth = req.headers.authorization;
-  if (auth?.startsWith("Bearer ")) {
-    try {
-      jwt.verify(auth.slice(7), JWT_SECRET, { algorithms: ["HS256"] });
-      return true;
-    } catch { /* fall through */ }
-  }
-
-  // Check for x-portfolio-token
-  const token = req.headers["x-portfolio-token"] as string;
-  if (token) {
-    try {
-      jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
-      return true;
-    } catch { /* fall through */ }
-  }
-
-  // Fallback: check slug + password (bcrypt only — no plaintext comparison)
-  const slug = (req.headers["x-portfolio-slug"] || req.query?.slug || "") as string;
-  const password = req.headers["x-portfolio-password"] as string;
-  if (slug && password) {
-    const portfolio = await db.select().from(portfolioTable).where(eq(portfolioTable.slug, slug)).limit(1);
-    if (portfolio.length > 0) {
-      const bcrypt = await import("bcryptjs");
-      const valid = await bcrypt.compare(password, portfolio[0].adminPassword);
-      if (valid) return true;
-    }
-  }
-
-  res.status(401).json({ error: "Authentication required to use AI features" });
-  return false;
+// AI chat is public — anyone can use it, no auth required
+async function requireAiAuth(_req: any, _res: any): Promise<boolean> {
+  return true;
 }
 
 // Resolve which portfolio slug to use from the request (query param takes priority over header)
