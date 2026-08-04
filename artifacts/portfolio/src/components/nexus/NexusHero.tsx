@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Download, User, Upload, ImageOff, Pencil, Check, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import DOMPurify from "dompurify";
 import type { Portfolio } from "@workspace/api-client-react";
 
 function buildTitles(portfolio: Portfolio): string[] {
@@ -25,7 +26,7 @@ function InlineEditHero({ value, onSave, className = "" }: {
   if (!editing) return (
     <span className={`group relative cursor-pointer hover:opacity-80 ${className}`} onClick={() => setEditing(true)} title="Click to edit">
       {plainText ? (
-        <span dangerouslySetInnerHTML={{ __html: value }} />
+        <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }} />
       ) : (
         <span className="opacity-40">Click to edit...</span>
       )}
@@ -174,7 +175,7 @@ export function NexusHero({
                 onSave={(v) => onFieldSave({ about: v })}
               />
             ) : portfolio.about ? (
-              <span dangerouslySetInnerHTML={{ __html: portfolio.about }} />
+              <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(portfolio.about) }} />
             ) : (
               "Passionate about building impactful digital experiences."
             )}

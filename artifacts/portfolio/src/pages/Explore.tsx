@@ -7,10 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
   Users, BookOpen, Search, Loader2, MapPin, Briefcase, Sparkles, Mail, ArrowLeft,
-  MessageSquare, Send, Bot, User as UserIcon, X, Lock, User
+  MessageSquare, Send, Bot, User as UserIcon, X, Lock, User, Shield
 } from "lucide-react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+const WHATSAPP_URL = "https://wa.me/923122787385?text=Hi,%20I%27m%20interested%20in%20Zilk%20Co%20Portfolio%20Builder.%20I%20want%20to%20start%20my%20free%20trial.";
 
 export default function ExplorePage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,6 +20,8 @@ export default function ExplorePage() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [blogs, setBlogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
 
   // AI Chat state
   const [aiMessages, setAiMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
@@ -26,13 +30,34 @@ export default function ExplorePage() {
   const aiChatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const slug = localStorage.getItem("portfolio_slug");
+        const token = localStorage.getItem("portfolio_token");
+        if (!slug || !token) { setHasAccess(false); setAccessChecked(true); return; }
+        const res = await apiFetch("/api/portfolio", {
+          headers: { "x-portfolio-slug": slug, "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) { setHasAccess(false); setAccessChecked(true); return; }
+        const data = await res.json();
+        const features = data.features || {};
+        setHasAccess(features.exploreAccess === true && data.status === 'open');
+      } catch {
+        setHasAccess(false);
+      } finally {
+        setAccessChecked(true);
+      }
+    };
+    checkAccess();
+  }, []);
+
+  useEffect(() => {
+    if (!hasAccess) { setLoading(false); return; }
     const fetchData = async () => {
       setLoading(true);
       try {
         const response = await apiFetch("/api/portfolio/explore", {
-          headers: {
-            "x-portfolio-slug": "default",
-          },
+          headers: { "x-portfolio-slug": "default" },
         });
         if (response.ok) {
           const data = await response.json();
@@ -46,7 +71,7 @@ export default function ExplorePage() {
       }
     };
     fetchData();
-  }, []);
+  }, [hasAccess]);
 
   const filteredProfiles = useMemo(() => {
     if (!profiles) return [];
@@ -143,6 +168,42 @@ export default function ExplorePage() {
     }
     setAiLoading(false);
   }, [aiInput, aiLoading]);
+
+  // Access check
+  if (!accessChecked) {
+    return (
+      <div className="portfolio-root min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#d97706]/30" />
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="portfolio-root min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-sm w-full text-center space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-[#d97706]/10 border border-[#d97706]/20 flex items-center justify-center mx-auto">
+            <Shield className="w-8 h-8 text-[#d97706]" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-heading font-bold text-white">Membership Required</h1>
+            <p className="text-sm text-white/40 mt-2">The Explore page is available to active members only. Start your free trial or subscribe to browse all portfolios.</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <a href="/">
+              <Button className="w-full bg-[#d97706] hover:bg-[#c2660a] h-11 rounded-xl font-bold text-white">Start Free Trial</Button>
+            </a>
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" className="w-full h-11 rounded-xl font-bold border-white/20 text-white hover:bg-white/[.08]">
+                <MessageSquare className="w-4 h-4 mr-1" /> Message on WhatsApp
+              </Button>
+            </a>
+          </div>
+          <Link href="/" className="text-xs text-white/30 hover:text-white/60 transition-colors inline-block">← Back to home</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="portfolio-root min-h-screen pt-16 pb-8">

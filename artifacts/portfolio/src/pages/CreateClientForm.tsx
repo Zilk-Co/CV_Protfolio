@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Check, Plus, ArrowLeft, Loader2, Globe, Lock, User, Bot, Compass, Target, FileText, Sparkles, BookOpen } from "lucide-react";
+import { Check, Plus, ArrowLeft, Loader2, Globe, Lock, User, Bot, Compass, Target, FileText, Sparkles, BookOpen, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api";
 
@@ -16,6 +17,7 @@ export default function CreateClientForm() {
     name: "",
     slug: "",
     password: "",
+    adminPassword: "",
     features: {
       cvImportExport: true,
       themeSelector: true,
@@ -30,14 +32,15 @@ export default function CreateClientForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.slug || !formData.password) return;
+    if (!formData.name || !formData.slug || !formData.password || !formData.adminPassword) return;
     
     setLoading(true);
     try {
+      const { adminPassword, ...body } = formData;
       const response = await apiFetch("/api/portfolio/create-client", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        headers: { "Content-Type": "application/json", "x-admin-password": adminPassword },
+        body: JSON.stringify(body)
       });
 
       const data = await response.json();
@@ -200,10 +203,9 @@ export default function CreateClientForm() {
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-slate-300">Admin Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <Input 
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
+                  <PasswordInput 
                     id="password"
-                    type="password"
                     placeholder="••••••••" 
                     className="bg-slate-950 border-slate-800 pl-10 focus:ring-blue-500 focus:border-blue-500"
                     required
@@ -212,6 +214,21 @@ export default function CreateClientForm() {
                   />
                 </div>
                 <p className="text-[10px] text-slate-500">Provide a temporary password for the student.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="adminPassword" className="text-slate-300">Super Admin Password</Label>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
+                  <PasswordInput 
+                    id="adminPassword"
+                    placeholder="Required to authorize creation" 
+                    className="bg-slate-950 border-slate-800 pl-10 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                    value={formData.adminPassword}
+                    onChange={(e) => setFormData({...formData, adminPassword: e.target.value})}
+                  />
+                </div>
               </div>
 
               <div className="space-y-3 pt-2">
@@ -255,7 +272,7 @@ export default function CreateClientForm() {
               <Button 
                 type="submit" 
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 transition-all"
-                disabled={loading}
+                disabled={loading || !formData.name || !formData.slug || !formData.password || !formData.adminPassword}
               >
                 {loading ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Provisioning Apartment...</>

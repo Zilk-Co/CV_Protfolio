@@ -41643,7 +41643,7 @@ var helmet = Object.assign(
   }
 );
 
-// ../../node_modules/.pnpm/express-rate-limit@8.6.0_ex_77a8aa0d9394dd86373a562fea65d4f7/node_modules/express-rate-limit/dist/index.mjs
+// ../../node_modules/.pnpm/express-rate-limit@8.6.0_express@5.2.1_supports-color@2.0.0/node_modules/express-rate-limit/dist/index.mjs
 var import_ip_address = __toESM(require_ip_address(), 1);
 var import_debug = __toESM(require_src(), 1);
 import { isIPv6 } from "node:net";
@@ -65107,7 +65107,9 @@ var portfolioTable = pgTable("portfolio", {
   loginUsername: text("login_username").notNull().default(""),
   adminPassword: text("admin_password").notNull().default(""),
   plainPassword: text("plain_password").notNull().default(""),
-  features: json("features").$type().default({ cvImportExport: true, aiChat: true, themeSelector: true, blogPage: true, exploreAccess: false, aiMatchAccess: false }),
+  features: json("features").$type().default({ cvImportExport: true, aiChat: true, themeSelector: true, blogPage: true, exploreAccess: false, aiMatchAccess: false, recruiterAiAccess: false }),
+  trialStartsAt: timestamp("trial_starts_at"),
+  adminLabel: text("admin_label"),
   cvExportSections: json("cv_export_sections").$type().default({ experience: true, education: true, skills: true, certifications: true, blogs: true, customSections: true })
 });
 var educationTable = pgTable("education", {
@@ -65154,6 +65156,7 @@ var blogsTable = pgTable("blogs", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   summary: text("summary").notNull().default(""),
+  coverImage: text("cover_image"),
   publishedAt: timestamp("published_at").notNull().defaultNow(),
   orderIndex: integer("order_index").notNull().default(0)
 });
@@ -72405,16 +72408,28 @@ if (!process.env.SUPER_ADMIN_PASSWORD) {
   throw new Error("FATAL: SUPER_ADMIN_PASSWORD environment variable is required. Set it in .env");
 }
 var JWT_SECRET = process.env.JWT_SECRET;
-var JWT_EXPIRY = "7d";
+var JWT_EXPIRY = "1h";
 var SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD;
 var SALT_ROUNDS = 10;
 var JWT_ALGORITHM = "HS256";
-var tokenBlocklist = /* @__PURE__ */ new Set();
+var tokenBlocklist = /* @__PURE__ */ new Map();
 function isTokenRevoked(token) {
-  return tokenBlocklist.has(token);
+  const expiry = tokenBlocklist.get(token);
+  if (!expiry) return false;
+  if (Date.now() > expiry) {
+    tokenBlocklist.delete(token);
+    return false;
+  }
+  return true;
+}
+function addToBlocklist(token) {
+  tokenBlocklist.set(token, Date.now() + 7 * 24 * 60 * 60 * 1e3);
 }
 setInterval(() => {
-  if (tokenBlocklist.size > 1e4) tokenBlocklist.clear();
+  const now = Date.now();
+  for (const [token, expiry] of tokenBlocklist) {
+    if (now > expiry) tokenBlocklist.delete(token);
+  }
 }, 36e5);
 function signToken(portfolioId, slug2) {
   return import_jsonwebtoken.default.sign({ id: portfolioId, slug: slug2 }, JWT_SECRET, { algorithm: JWT_ALGORITHM, expiresIn: JWT_EXPIRY });
@@ -72455,6 +72470,14 @@ function safeCompare(a, b) {
 }
 function sanitizePortfolioResponse(portfolio) {
   const { adminPassword, loginUsername, plainPassword, ...safe } = portfolio;
+  if (portfolio.trialStartsAt && !portfolio.isAdmin) {
+    const trialStart = new Date(portfolio.trialStartsAt).getTime();
+    const TRIAL_DAYS = 7;
+    const trialEnd = trialStart + TRIAL_DAYS * 24 * 60 * 60 * 1e3;
+    safe.trialExpired = Date.now() > trialEnd;
+  } else {
+    safe.trialExpired = false;
+  }
   return safe;
 }
 async function requireAdmin(req, res) {
@@ -72475,7 +72498,7 @@ async function requireAdmin(req, res) {
   return payload.id;
 }
 function requireSuperAdmin(req, res) {
-  const pw = req.headers["x-admin-password"] || req.body?.adminPassword;
+  const pw = req.headers["x-admin-password"];
   if (!SUPER_ADMIN_PASSWORD) {
     res.status(500).json({ error: "Server configuration error" });
     return false;
@@ -72549,10 +72572,9 @@ router2.post("/portfolio/login", async (req, res) => {
     const attempt = loginAttempts.get(attemptKey);
     if (attempt && attempt.lockoutUntil > Date.now()) {
       const remaining = Math.ceil((attempt.lockoutUntil - Date.now()) / 1e3);
-      return res.status(429).json({ error: `Account locked. Try again in ${remaining} seconds` });
+      return res.status(429).json({ error: `Too many attempts. Try again in ${remaining} seconds` });
     }
-    const allPortfolios = await db.select().from(portfolioTable);
-    const portfolio = allPortfolios.find((p) => p.loginUsername?.toLowerCase() === attemptKey) || null;
+    const [portfolio] = await db.select().from(portfolioTable).where(eq(portfolioTable.loginUsername, attemptKey)).limit(1);
     if (!portfolio) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
@@ -72580,8 +72602,24 @@ router2.post("/portfolio/login", async (req, res) => {
 });
 router2.post("/portfolio/logout", async (req, res) => {
   const token = getTokenFromRequest(req);
-  if (token) tokenBlocklist.add(token);
+  if (token) addToBlocklist(token);
   res.json({ success: true });
+});
+router2.post("/portfolio/refresh", async (req, res) => {
+  const token = getTokenFromRequest(req);
+  if (!token) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  if (isTokenRevoked(token)) {
+    return res.status(401).json({ error: "Token has been revoked" });
+  }
+  const payload = verifyToken(token);
+  if (!payload) {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+  const newToken = signToken(payload.id, payload.slug);
+  addToBlocklist(token);
+  res.json({ token: newToken, slug: payload.slug });
 });
 router2.put("/portfolio", async (req, res) => {
   try {
@@ -73094,7 +73132,8 @@ router2.post("/portfolio/create-client", async (req, res) => {
       themeSelector: features?.themeSelector === true,
       blogPage: features?.blogPage === true,
       exploreAccess: features?.exploreAccess === true,
-      aiMatchAccess: features?.aiMatchAccess === true
+      aiMatchAccess: features?.aiMatchAccess === true,
+      recruiterAiAccess: features?.recruiterAiAccess === true
     };
     const sectionOrder = ["experience", "education", "skills", "certifications"];
     if (clientFeatures.blogPage) sectionOrder.push("blogs");
@@ -73102,7 +73141,6 @@ router2.post("/portfolio/create-client", async (req, res) => {
     const [newClient] = await db.insert(portfolioTable).values({
       slug: slug2,
       adminPassword: hashedPassword,
-      plainPassword: password,
       loginUsername: name || "newclient",
       name: name || "New Client",
       email: email3 || "",
@@ -73112,7 +73150,8 @@ router2.post("/portfolio/create-client", async (req, res) => {
       status: "open",
       isAdmin: false,
       sectionOrder,
-      features: clientFeatures
+      features: clientFeatures,
+      adminLabel: null
     }).returning();
     return res.status(201).json({
       success: true,
@@ -73136,7 +73175,8 @@ router2.get("/portfolio/clients", async (req, res) => {
       theme: portfolioTable.theme,
       status: portfolioTable.status,
       features: portfolioTable.features,
-      plainPassword: portfolioTable.plainPassword
+      trialStartsAt: portfolioTable.trialStartsAt,
+      adminLabel: portfolioTable.adminLabel
     }).from(portfolioTable).where(eq(portfolioTable.isAdmin, false));
     const nonDefault = clients.filter((c) => c.slug !== "default");
     return res.json(nonDefault);
@@ -73150,20 +73190,31 @@ router2.put("/portfolio/clients/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid client ID" });
-    const { features } = req.body;
-    const clientFeatures = {
-      cvImportExport: features?.cvImportExport === true,
-      aiChat: features?.aiChat === true,
-      themeSelector: features?.themeSelector === true,
-      blogPage: features?.blogPage === true,
-      exploreAccess: features?.exploreAccess === true,
-      aiMatchAccess: features?.aiMatchAccess === true
-    };
-    const [updated] = await db.update(portfolioTable).set({ features: clientFeatures }).where(eq(portfolioTable.id, id)).returning({
+    const { features, status, adminLabel } = req.body;
+    const updateData = {};
+    if (features) {
+      updateData.features = {
+        cvImportExport: features?.cvImportExport === true,
+        aiChat: features?.aiChat === true,
+        themeSelector: features?.themeSelector === true,
+        blogPage: features?.blogPage === true,
+        exploreAccess: features?.exploreAccess === true,
+        aiMatchAccess: features?.aiMatchAccess === true,
+        recruiterAiAccess: features?.recruiterAiAccess === true
+      };
+    }
+    if (status && ["open", "locked"].includes(status)) {
+      updateData.status = status;
+    }
+    if (adminLabel !== void 0) {
+      updateData.adminLabel = adminLabel || null;
+    }
+    const [updated] = await db.update(portfolioTable).set(updateData).where(eq(portfolioTable.id, id)).returning({
       id: portfolioTable.id,
       slug: portfolioTable.slug,
       name: portfolioTable.name,
-      features: portfolioTable.features
+      features: portfolioTable.features,
+      status: portfolioTable.status
     });
     if (!updated) return res.status(404).json({ error: "Client not found" });
     return res.json({ success: true, client: updated });
@@ -73182,7 +73233,7 @@ router2.put("/portfolio/clients/:id/password", async (req, res) => {
     const pwError = validatePasswordStrength(password);
     if (pwError) return res.status(400).json({ error: pwError });
     const hashedPassword = await hashPassword(password);
-    const [updated] = await db.update(portfolioTable).set({ adminPassword: hashedPassword, plainPassword: password }).where(eq(portfolioTable.id, id)).returning({ id: portfolioTable.id, slug: portfolioTable.slug });
+    const [updated] = await db.update(portfolioTable).set({ adminPassword: hashedPassword }).where(eq(portfolioTable.id, id)).returning({ id: portfolioTable.id, slug: portfolioTable.slug });
     if (!updated) return res.status(404).json({ error: "Client not found" });
     return res.json({ success: true, client: updated });
   } catch (error40) {
@@ -73938,44 +73989,65 @@ var logger = (0, import_pino.default)({
 // src/app.ts
 var app = (0, import_express6.default)();
 async function runMigrations() {
-  try {
-    await pool.query("ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS employment_status TEXT NOT NULL DEFAULT 'available';");
-    await pool.query("ALTER TABLE portfolio ALTER COLUMN admin_password SET DEFAULT '';");
-    await pool.query("ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS plain_password TEXT NOT NULL DEFAULT '';");
-    await pool.query(`ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS cv_export_sections JSONB DEFAULT '{"experience":true,"education":true,"skills":true,"certifications":true,"blogs":true,"customSections":true}';`);
-    const fkChecks = [
-      ["education", "fk_education_portfolio", "portfolio_id", "portfolio"],
-      ["experience", "fk_experience_portfolio", "portfolio_id", "portfolio"],
-      ["skills", "fk_skills_portfolio", "portfolio_id", "portfolio"],
-      ["certifications", "fk_certifications_portfolio", "portfolio_id", "portfolio"],
-      ["blogs", "fk_blogs_portfolio", "portfolio_id", "portfolio"],
-      ["custom_sections", "fk_custom_sections_portfolio", "portfolio_id", "portfolio"],
-      ["custom_section_items", "fk_custom_section_items_portfolio", "portfolio_id", "portfolio"],
-      ["custom_section_items", "fk_custom_section_items_section", "custom_section_id", "custom_sections"]
-    ];
-    for (const [table, constraint, col, refTable] of fkChecks) {
+  const migrations = [
+    "ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS employment_status TEXT NOT NULL DEFAULT 'available';",
+    "ALTER TABLE portfolio ALTER COLUMN admin_password SET DEFAULT '';",
+    "ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS plain_password TEXT NOT NULL DEFAULT '';",
+    `ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS cv_export_sections JSONB DEFAULT '{"experience":true,"education":true,"skills":true,"certifications":true,"blogs":true,"customSections":true}';`,
+    "ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS trial_starts_at TIMESTAMP;",
+    "ALTER TABLE blogs ADD COLUMN IF NOT EXISTS cover_image TEXT;",
+    "ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS admin_label TEXT;"
+  ];
+  for (const sql2 of migrations) {
+    try {
+      await pool.query(sql2);
+    } catch (e) {
+    }
+  }
+  const fkChecks = [
+    ["education", "fk_education_portfolio", "portfolio_id", "portfolio"],
+    ["experience", "fk_experience_portfolio", "portfolio_id", "portfolio"],
+    ["skills", "fk_skills_portfolio", "portfolio_id", "portfolio"],
+    ["certifications", "fk_certifications_portfolio", "portfolio_id", "portfolio"],
+    ["blogs", "fk_blogs_portfolio", "portfolio_id", "portfolio"],
+    ["custom_sections", "fk_custom_sections_portfolio", "portfolio_id", "portfolio"],
+    ["custom_section_items", "fk_custom_section_items_portfolio", "portfolio_id", "portfolio"],
+    ["custom_section_items", "fk_custom_section_items_section", "custom_section_id", "custom_sections"]
+  ];
+  for (const [table, constraint, col, refTable] of fkChecks) {
+    try {
       const exists2 = await pool.query(`SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = $1 AND table_name = $2`, [constraint, table]);
       if (exists2.rows.length === 0) {
         await pool.query(`ALTER TABLE ${table} ADD CONSTRAINT ${constraint} FOREIGN KEY (${col}) REFERENCES ${refTable}(id) ON DELETE CASCADE;`);
       }
+    } catch (e) {
     }
+  }
+  try {
     const convExists = await pool.query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'conversations' AND column_name = 'portfolio_id'`);
     if (convExists.rows.length === 0) {
       await pool.query(`ALTER TABLE conversations ADD COLUMN portfolio_id INTEGER REFERENCES portfolio(id) ON DELETE SET NULL;`);
     }
-    await pool.query(`UPDATE portfolio SET login_username = 'admin' WHERE slug = 'default' AND login_username != 'admin';`);
-    await pool.query(`UPDATE portfolio SET features = jsonb_set(jsonb_set(COALESCE(features, '{}'), '{aiChat}', 'true'), '{themeSelector}', 'true') WHERE features->>'aiChat' IS DISTINCT FROM 'true' OR features->>'themeSelector' IS DISTINCT FROM 'true';`);
-    logger.info("Database migrations completed");
-  } catch (err) {
-    logger.warn({ err }, "Migration warning (may already exist)");
+  } catch (e) {
   }
+  try {
+    await pool.query(`UPDATE portfolio SET login_username = 'admin' WHERE slug = 'default' AND login_username != 'admin';`);
+    await pool.query(`UPDATE portfolio SET trial_starts_at = NULL WHERE slug IN ('default','mustafa-protfolio','ayaan-protfolio','agha-protfolio');`);
+    await pool.query(`UPDATE portfolio SET slug = 'ayaan-protfolio', name = 'Ayaan', login_username = 'ayaan' WHERE slug = 'umarjadoon';`);
+    await pool.query(`UPDATE portfolio SET slug = 'agha-protfolio', name = 'Agha', login_username = 'agha' WHERE slug = 'azhar-abbas';`);
+    await pool.query(`UPDATE portfolio SET trial_starts_at = NULL, login_username = 'mustafa' WHERE slug = 'mustafa-protfolio';`);
+    await pool.query(`UPDATE portfolio SET trial_starts_at = NULL, login_username = 'ayaan' WHERE slug = 'ayaan-protfolio';`);
+    await pool.query(`UPDATE portfolio SET trial_starts_at = NULL, login_username = 'agha' WHERE slug = 'agha-protfolio';`);
+  } catch (e) {
+  }
+  logger.info("Database migrations completed");
 }
 runMigrations().catch((err) => logger.error({ err }, "Migration failed"));
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:"],
@@ -73995,7 +74067,7 @@ app.use((0, import_cors.default)({
   origin: (origin, callback) => {
     if (origin === "null") return callback(new Error("Not allowed by CORS"));
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     callback(new Error("Not allowed by CORS"));
@@ -74061,8 +74133,19 @@ app.use(
   })
 );
 app.use("/api/portfolio/login", authLimiter);
+app.use("/api/portfolio/refresh", authLimiter);
 app.use("/api/portfolio/create-client", superAdminLimiter);
 app.use("/api/portfolio/clients", superAdminLimiter);
+app.use("/api/portfolio/logout", authLimiter);
+app.use("/api/portfolio/education", superAdminLimiter);
+app.use("/api/portfolio/experience", superAdminLimiter);
+app.use("/api/portfolio/skills", superAdminLimiter);
+app.use("/api/portfolio/certifications", superAdminLimiter);
+app.use("/api/portfolio/blogs", superAdminLimiter);
+app.use("/api/portfolio/custom-sections", superAdminLimiter);
+app.use("/api/portfolio/cv", superAdminLimiter);
+app.use("/api/portfolio/reset", superAdminLimiter);
+app.use("/api/portfolio/import", superAdminLimiter);
 app.use("/api/openai", aiLimiter);
 app.use("/api/cv", aiLimiter);
 app.use("/api", routes_default);

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { AlignLeft, Pencil, Plus, X } from "lucide-react";
+import DOMPurify from "dompurify";
 
 export function NexusAbout({
   about,
@@ -33,7 +34,7 @@ export function NexusAbout({
               <button className="nexus-add-btn" onClick={onEditAbout}><Pencil className="w-4 h-4" /> Edit</button>
             )}
           </div>
-          <div className="nexus-about-content" dangerouslySetInnerHTML={{ __html: about || "<p>Tell the world about yourself...</p>" }} />
+          <div className="nexus-about-content" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(about || "<p>Tell the world about yourself...</p>") }} />
           <div className="nexus-about-chips">
             {Object.entries(additionalInfo || {}).map(([k, v]) => (
               <div key={k} className="nexus-about-chip">

@@ -59,20 +59,35 @@ if (!process.env.SUPER_ADMIN_PASSWORD) {
   throw new Error("FATAL: SUPER_ADMIN_PASSWORD environment variable is required. Set it in .env");
 }
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRY = "7d";
+const JWT_EXPIRY = "1h";
 const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD;
 const SALT_ROUNDS = 10;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 const JWT_ALGORITHM = "HS256";
 
-// H8: Simple in-memory token blocklist for logout/revocation
-const tokenBlocklist = new Set<string>();
+// H8: Token blocklist with per-token expiry (7d max to match JWT expiry)
+const tokenBlocklist = new Map<string, number>(); // token -> expiry timestamp
 function isTokenRevoked(token: string): boolean {
-  return tokenBlocklist.has(token);
+  const expiry = tokenBlocklist.get(token);
+  if (!expiry) return false;
+  if (Date.now() > expiry) {
+    tokenBlocklist.delete(token);
+    return false;
+  }
+  return true;
 }
-// Cleanup old tokens every hour to prevent memory leak
-setInterval(() => { if (tokenBlocklist.size > 10000) tokenBlocklist.clear(); }, 3600000);
+function addToBlocklist(token: string) {
+  // Expire blocklist entry after 7 days (max JWT lifetime)
+  tokenBlocklist.set(token, Date.now() + 7 * 24 * 60 * 60 * 1000);
+}
+// Cleanup expired entries every hour
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, expiry] of tokenBlocklist) {
+    if (now > expiry) tokenBlocklist.delete(token);
+  }
+}, 3600000);
 
 function signToken(portfolioId: number, slug: string): string {
   return jwt.sign({ id: portfolioId, slug }, JWT_SECRET, { algorithm: JWT_ALGORITHM, expiresIn: JWT_EXPIRY });
@@ -122,6 +137,15 @@ function safeCompare(a: string, b: string): boolean {
 
 function sanitizePortfolioResponse(portfolio: any) {
   const { adminPassword, loginUsername, plainPassword, ...safe } = portfolio;
+  // Add trialExpired flag for public viewers
+  if (portfolio.trialStartsAt && !portfolio.isAdmin) {
+    const trialStart = new Date(portfolio.trialStartsAt).getTime();
+    const TRIAL_DAYS = 7;
+    const trialEnd = trialStart + TRIAL_DAYS * 24 * 60 * 60 * 1000;
+    safe.trialExpired = Date.now() > trialEnd;
+  } else {
+    safe.trialExpired = false;
+  }
   return safe;
 }
 
@@ -145,7 +169,7 @@ async function requireAdmin(req: any, res: any): Promise<number | null> {
 }
 
 function requireSuperAdmin(req: any, res: any): boolean {
-  const pw = req.headers["x-admin-password"] || req.body?.adminPassword;
+  const pw = req.headers["x-admin-password"];
   if (!SUPER_ADMIN_PASSWORD) {
     res.status(500).json({ error: "Server configuration error" });
     return false;
@@ -234,12 +258,11 @@ router.post("/portfolio/login", async (req, res) => {
     const attempt = loginAttempts.get(attemptKey);
     if (attempt && attempt.lockoutUntil > Date.now()) {
       const remaining = Math.ceil((attempt.lockoutUntil - Date.now()) / 1000);
-      return res.status(429).json({ error: `Account locked. Try again in ${remaining} seconds` });
+      return res.status(429).json({ error: `Too many attempts. Try again in ${remaining} seconds` });
     }
 
-    // Lookup by login_username (case-insensitive) — slug and name are never used for login
-    const allPortfolios = await db.select().from(portfolioTable);
-    const portfolio = allPortfolios.find(p => p.loginUsername?.toLowerCase() === attemptKey) || null;
+    // Lookup by login_username (case-insensitive)
+    const [portfolio] = await db.select().from(portfolioTable).where(eq(portfolioTable.loginUsername, attemptKey)).limit(1);
     if (!portfolio) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
@@ -271,8 +294,27 @@ router.post("/portfolio/login", async (req, res) => {
 // ─── ADMIN: Logout (revoke JWT) ───────────────────────────────────────────
 router.post("/portfolio/logout", async (req, res) => {
   const token = getTokenFromRequest(req);
-  if (token) tokenBlocklist.add(token);
+  if (token) addToBlocklist(token);
   res.json({ success: true });
+});
+
+// ─── ADMIN: Refresh Token ────────────────────────────────────────────────
+router.post("/portfolio/refresh", async (req, res) => {
+  const token = getTokenFromRequest(req);
+  if (!token) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  if (isTokenRevoked(token)) {
+    return res.status(401).json({ error: "Token has been revoked" });
+  }
+  const payload = verifyToken(token);
+  if (!payload) {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+  // Issue a new token
+  const newToken = signToken(payload.id, payload.slug);
+  addToBlocklist(token); // revoke old token
+  res.json({ token: newToken, slug: payload.slug });
 });
 
 // ─── ADMIN: Update Portfolio ──────────────────────────────────────────────
@@ -833,6 +875,7 @@ router.post("/portfolio/create-client", async (req, res) => {
       blogPage: features?.blogPage === true,
       exploreAccess: features?.exploreAccess === true,
       aiMatchAccess: features?.aiMatchAccess === true,
+      recruiterAiAccess: features?.recruiterAiAccess === true,
     };
 
     const sectionOrder: string[] = ["experience", "education", "skills", "certifications"];
@@ -843,7 +886,6 @@ router.post("/portfolio/create-client", async (req, res) => {
     const [newClient] = await db.insert(portfolioTable).values({
       slug,
       adminPassword: hashedPassword,
-      plainPassword: password,
       loginUsername: name || "newclient",
       name: name || "New Client",
       email: email || "",
@@ -854,6 +896,7 @@ router.post("/portfolio/create-client", async (req, res) => {
       isAdmin: false,
       sectionOrder,
       features: clientFeatures,
+      adminLabel: null,
     }).returning();
 
     return res.status(201).json({
@@ -881,7 +924,8 @@ router.get("/portfolio/clients", async (req, res) => {
         theme: portfolioTable.theme,
         status: portfolioTable.status,
         features: portfolioTable.features,
-        plainPassword: portfolioTable.plainPassword,
+        trialStartsAt: portfolioTable.trialStartsAt,
+        adminLabel: portfolioTable.adminLabel,
       })
       .from(portfolioTable)
       .where(eq(portfolioTable.isAdmin, false));
@@ -900,25 +944,39 @@ router.put("/portfolio/clients/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid client ID" });
 
-    const { features } = req.body;
-    const clientFeatures = {
-      cvImportExport: features?.cvImportExport === true,
-      aiChat: features?.aiChat === true,
-      themeSelector: features?.themeSelector === true,
-      blogPage: features?.blogPage === true,
-      exploreAccess: features?.exploreAccess === true,
-      aiMatchAccess: features?.aiMatchAccess === true,
-    };
+    const { features, status, adminLabel } = req.body;
+    const updateData: Record<string, any> = {};
+
+    if (features) {
+      updateData.features = {
+        cvImportExport: features?.cvImportExport === true,
+        aiChat: features?.aiChat === true,
+        themeSelector: features?.themeSelector === true,
+        blogPage: features?.blogPage === true,
+        exploreAccess: features?.exploreAccess === true,
+        aiMatchAccess: features?.aiMatchAccess === true,
+        recruiterAiAccess: features?.recruiterAiAccess === true,
+      };
+    }
+
+    if (status && ["open", "locked"].includes(status)) {
+      updateData.status = status;
+    }
+
+    if (adminLabel !== undefined) {
+      updateData.adminLabel = adminLabel || null;
+    }
 
     const [updated] = await db
       .update(portfolioTable)
-      .set({ features: clientFeatures })
+      .set(updateData)
       .where(eq(portfolioTable.id, id))
       .returning({
         id: portfolioTable.id,
         slug: portfolioTable.slug,
         name: portfolioTable.name,
         features: portfolioTable.features,
+        status: portfolioTable.status,
       });
 
     if (!updated) return res.status(404).json({ error: "Client not found" });
@@ -945,7 +1003,7 @@ router.put("/portfolio/clients/:id/password", async (req, res) => {
 
     const [updated] = await db
       .update(portfolioTable)
-      .set({ adminPassword: hashedPassword, plainPassword: password })
+      .set({ adminPassword: hashedPassword })
       .where(eq(portfolioTable.id, id))
       .returning({ id: portfolioTable.id, slug: portfolioTable.slug });
 

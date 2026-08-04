@@ -17,6 +17,7 @@ import {
 import type { Education, Experience, Certification, CustomSection, CustomSectionItem } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -40,6 +41,7 @@ import { NexusCustomSections } from "@/components/nexus/NexusCustomSections";
 import { NexusFooter } from "@/components/nexus/NexusFooter";
 import { CreateClientDialog } from "@/components/CreateClientDialog";
 import { FloatingAiChat } from "@/components/FloatingAiChat";
+import { TrialLockOverlay } from "@/components/TrialLockOverlay";
 import { apiFetch } from "@/lib/api";
 
 
@@ -371,8 +373,6 @@ function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () =>
   const [current, setCurrent] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const changePassword = useChangePassword();
@@ -403,25 +403,15 @@ function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () =>
           <div className="space-y-3">
             <div>
               <label className="text-sm font-medium">Current Password</label>
-              <div className="relative mt-1">
-                <Input type={showCurrent ? "text" : "password"} value={current} onChange={(e) => setCurrent(e.target.value)} placeholder="Enter current password" />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowCurrent(s => !s)}>
-                  {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
+              <PasswordInput value={current} onChange={(e) => setCurrent(e.target.value)} placeholder="Enter current password" className="mt-1" />
             </div>
             <div>
               <label className="text-sm font-medium">New Password</label>
-              <div className="relative mt-1">
-                <Input type={showNew ? "text" : "password"} value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="At least 4 characters" />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowNew(s => !s)}>
-                  {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
+              <PasswordInput value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="At least 4 characters" className="mt-1" />
             </div>
             <div>
               <label className="text-sm font-medium">Confirm New Password</label>
-              <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat new password" className="mt-1" onKeyDown={(e) => e.key === "Enter" && handleChange()} />
+              <PasswordInput value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat new password" className="mt-1" onKeyDown={(e) => e.key === "Enter" && handleChange()} />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
@@ -484,7 +474,7 @@ function ChangeUsernameDialog({ open, onClose }: { open: boolean; onClose: () =>
             <p className="text-xs text-muted-foreground">This is the username you use to sign in — it is separate from your display name.</p>
             <div>
               <label className="text-sm font-medium">Current Password</label>
-              <Input type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} placeholder="Enter current password" className="mt-1" />
+              <PasswordInput value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} placeholder="Enter current password" className="mt-1" />
             </div>
             <div>
               <label className="text-sm font-medium">New Username</label>
@@ -687,6 +677,7 @@ export default function PortfolioPage() {
 
   // Photo upload ref
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const [photoOpen, setPhotoOpen] = useState(false);
 
   // Mutations
   const addEducation = useAddEducation();
@@ -1089,6 +1080,28 @@ export default function PortfolioPage() {
 
   const features = portfolio.features || { cvImportExport: true, aiChat: true, themeSelector: true, blogPage: true, exploreAccess: false, aiMatchAccess: false };
 
+  // Demo portfolio restriction: only theme preview allowed for non-admin viewers
+  const DEMO_SLUGS = ["mustafa-protfolio", "ayaan-protfolio", "agha-protfolio"];
+  const isDemoPortfolio = DEMO_SLUGS.includes(currentSlug);
+  const demoFeatures = isDemoPortfolio && !isAdmin ? {
+    cvImportExport: false,
+    aiChat: false,
+    themeSelector: true,   // Allow theme switching
+    blogPage: false,
+    exploreAccess: false,
+    aiMatchAccess: false,
+    recruiterAiAccess: false,
+  } : features;
+
+  // Trial lock check — only for non-admin public viewers
+  if (!isAdmin && portfolio.trialExpired) {
+    return (
+      <div className={`portfolio-root theme-${theme} min-h-screen`}>
+        <TrialLockOverlay slug={currentSlug} name={portfolio.name} />
+      </div>
+    );
+  }
+
   const STATUS_OPTIONS = [
     { value: "open", label: "Open to Opportunities" },
     { value: "hiring", label: "Hiring" },
@@ -1111,7 +1124,7 @@ export default function PortfolioPage() {
     { key: "education", label: "Education", icon: <GraduationCap className="w-5 h-5" />, isEmpty: (portfolio.education || []).length === 0 },
     { key: "skills", label: "Skills", icon: <Wrench className="w-5 h-5" />, isEmpty: (portfolio.skills || []).length === 0 },
     { key: "certifications", label: "Certifications", icon: <Award className="w-5 h-5" />, isEmpty: (portfolio.certifications || []).length === 0 },
-    { key: "blogs", label: "Blog", icon: <BookOpen className="w-5 h-5" />, isEmpty: !features.blogPage || (portfolio.blogs || []).length === 0 },
+    { key: "blogs", label: "Blog", icon: <BookOpen className="w-5 h-5" />, isEmpty: !demoFeatures.blogPage || (portfolio.blogs || []).length === 0 },
   ];
   const customSectionDefs: SectionDef[] = (portfolio.customSections || []).map(cs => ({
     key: `custom_${cs.id}`,
@@ -1153,7 +1166,7 @@ export default function PortfolioPage() {
                 {/* Desktop controls */}
                 <div className="hidden sm:flex items-center gap-1 overflow-x-auto">
                   {/* CV Tools */}
-                  {features.cvImportExport && (
+                  {demoFeatures.cvImportExport && (
                     <>
                       <Button size="sm" variant="outline" onClick={() => setShowCvModal(true)} className="h-7 text-xs gap-1 flex-shrink-0">
                         <FileText className="w-3 h-3" /> Import
@@ -1187,7 +1200,7 @@ export default function PortfolioPage() {
                   )}
                   {/* Settings */}
                   <div className="w-px h-4 bg-border/50 mx-1 flex-shrink-0" />
-                  {features.themeSelector && (
+                  {demoFeatures.themeSelector && (
                     <select className="text-xs border rounded px-1.5 py-1 bg-background h-7 flex-shrink-0 min-w-0 max-w-[110px]" value={theme} onChange={(e) => { setThemeOverride(e.target.value); saveField({ theme: e.target.value }); }}>
                       <option value="orbital">Orbital</option>
                       <option value="holo">Holo</option>
@@ -1251,7 +1264,7 @@ export default function PortfolioPage() {
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
               <Settings className="w-3 h-3" /> Admin Controls
             </div>
-            {features.themeSelector && (
+            {demoFeatures.themeSelector && (
               <div className="flex flex-col gap-2">
                 <label className="text-xs text-muted-foreground">Theme</label>
                 <select className="text-sm border rounded px-3 py-2 bg-background w-full" value={theme} onChange={(e) => { setThemeOverride(e.target.value); saveField({ theme: e.target.value }); setShowMobileMenu(false); }}>
@@ -1292,17 +1305,17 @@ export default function PortfolioPage() {
               </select>
             </div>
             <div className="flex gap-2 flex-wrap">
-              {features.cvImportExport && (
+              {demoFeatures.cvImportExport && (
                 <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => { setShowCvModal(true); setShowMobileMenu(false); }}>
                   <FileText className="w-3 h-3" /> Import CV
                 </Button>
               )}
-              {features.cvImportExport && (
+              {demoFeatures.cvImportExport && (
                 <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => { handleExport(); setShowMobileMenu(false); }} disabled={isExporting}>
                   {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} Export
                 </Button>
               )}
-              {features.cvImportExport && (
+              {demoFeatures.cvImportExport && (
                 <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => { setShowExportSettings(true); setShowMobileMenu(false); }}>
                   <SlidersHorizontal className="w-3 h-3" /> Sections
                 </Button>
@@ -1338,14 +1351,14 @@ export default function PortfolioPage() {
           onRemovePhoto={handleRemovePhoto}
           onExport={handleExport}
           onFieldSave={(field) => updatePortfolio(field)}
-          features={{ cvImportExport: !!features.cvImportExport }}
+          features={{ cvImportExport: !!demoFeatures.cvImportExport }}
         />
       ) : (
       <section className="hero-section pt-16">
         <div className="max-w-5xl mx-auto px-6 py-14 flex flex-col md:flex-row items-center gap-10">
           {/* Photo */}
           <div className="relative flex-shrink-0">
-            <div className="w-36 h-36 rounded-full overflow-hidden bg-muted border-4 border-primary/30 shadow-lg cursor-pointer" onClick={() => isAdmin && photoInputRef.current?.click()} title={isAdmin ? "Click to change photo" : ""}>
+            <div className="w-36 h-36 rounded-full overflow-hidden bg-muted border-4 border-primary/30 shadow-lg cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" onClick={() => isAdmin ? photoInputRef.current?.click() : portfolio.photoUrl && setPhotoOpen(true)} title={isAdmin ? "Click to change photo" : "Click to view photo"}>
               {portfolio.photoUrl ? <img src={portfolio.photoUrl} alt={portfolio.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User className="w-16 h-16 opacity-20" /></div>}
             </div>
             {isAdmin && (
@@ -1391,7 +1404,7 @@ export default function PortfolioPage() {
       )}
 
       {/* ── Resume template selector ──────────────────────────────────── */}
-      {isAdmin && (
+      {(isAdmin || (isDemoPortfolio && !isAdmin)) && (
         <section className="max-w-5xl mx-auto px-6 py-4">
           <div className="section-card p-4 rounded-xl border border-border bg-card">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-3">
@@ -1411,9 +1424,11 @@ export default function PortfolioPage() {
                 <Button size="sm" variant="outline" onClick={handlePreviewCv} className="h-6 text-[10px] gap-1 px-2">
                   <Eye className="w-3 h-3" /> Preview
                 </Button>
-                <Button size="sm" onClick={handleExport} disabled={isExporting} className="h-6 text-[10px] gap-1 px-2">
-                  {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} Download
-                </Button>
+                {isAdmin && (
+                  <Button size="sm" onClick={handleExport} disabled={isExporting} className="h-6 text-[10px] gap-1 px-2">
+                    {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} Download
+                  </Button>
+                )}
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -1831,9 +1846,11 @@ export default function PortfolioPage() {
           </div>
           <div className="flex items-center justify-end gap-2 px-6 pb-4">
             <Button variant="outline" onClick={() => setShowCvPreview(false)}>Close</Button>
-            <Button onClick={handleExport} disabled={isExporting} className="gap-1">
-              {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} Download
-            </Button>
+            {isAdmin && (
+              <Button onClick={handleExport} disabled={isExporting} className="gap-1">
+                {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} Download
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -1872,7 +1889,7 @@ export default function PortfolioPage() {
       <CreateClientDialog open={showCreateClientDialog} onOpenChange={setShowCreateClientDialog} />
 
       {/* Floating AI Chat Widget */}
-      {features.aiChat && <FloatingAiChat slug={portfolio.slug} name={portfolio.name} />}
+      {demoFeatures.aiChat && <FloatingAiChat slug={portfolio.slug} name={portfolio.name} />}
 
       {/* Export Settings Modal */}
       {showExportSettings && (
@@ -1929,6 +1946,16 @@ export default function PortfolioPage() {
                 <Loader2 className="w-3 h-3 animate-spin" /> Saving...
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Photo Lightbox */}
+      {photoOpen && portfolio.photoUrl && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setPhotoOpen(false)}>
+          <div className="relative max-w-[90vw] max-h-[90vh]">
+            <img src={portfolio.photoUrl} alt={portfolio.name} className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain" />
+            <button onClick={() => setPhotoOpen(false)} className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shadow-lg hover:bg-gray-100 text-sm font-bold">&times;</button>
           </div>
         </div>
       )}

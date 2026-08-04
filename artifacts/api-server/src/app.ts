@@ -11,41 +11,57 @@ const app: Express = express();
 
 // Run migrations on startup
 async function runMigrations() {
-  try {
-    await pool.query("ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS employment_status TEXT NOT NULL DEFAULT 'available';");
-    await pool.query("ALTER TABLE portfolio ALTER COLUMN admin_password SET DEFAULT '';");
-    await pool.query("ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS plain_password TEXT NOT NULL DEFAULT '';");
-    await pool.query("ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS cv_export_sections JSONB DEFAULT '{\"experience\":true,\"education\":true,\"skills\":true,\"certifications\":true,\"blogs\":true,\"customSections\":true}';");
-    // H5: Add foreign key constraints (skip if already exists)
-    const fkChecks = [
-      ["education", "fk_education_portfolio", "portfolio_id", "portfolio"],
-      ["experience", "fk_experience_portfolio", "portfolio_id", "portfolio"],
-      ["skills", "fk_skills_portfolio", "portfolio_id", "portfolio"],
-      ["certifications", "fk_certifications_portfolio", "portfolio_id", "portfolio"],
-      ["blogs", "fk_blogs_portfolio", "portfolio_id", "portfolio"],
-      ["custom_sections", "fk_custom_sections_portfolio", "portfolio_id", "portfolio"],
-      ["custom_section_items", "fk_custom_section_items_portfolio", "portfolio_id", "portfolio"],
-      ["custom_section_items", "fk_custom_section_items_section", "custom_section_id", "custom_sections"],
-    ];
-    for (const [table, constraint, col, refTable] of fkChecks) {
+  const migrations = [
+    "ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS employment_status TEXT NOT NULL DEFAULT 'available';",
+    "ALTER TABLE portfolio ALTER COLUMN admin_password SET DEFAULT '';",
+    "ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS plain_password TEXT NOT NULL DEFAULT '';",
+    "ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS cv_export_sections JSONB DEFAULT '{\"experience\":true,\"education\":true,\"skills\":true,\"certifications\":true,\"blogs\":true,\"customSections\":true}';",
+    "ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS trial_starts_at TIMESTAMP;",
+    "ALTER TABLE blogs ADD COLUMN IF NOT EXISTS cover_image TEXT;",
+    "ALTER TABLE portfolio ADD COLUMN IF NOT EXISTS admin_label TEXT;",
+  ];
+  for (const sql of migrations) {
+    try { await pool.query(sql); } catch (e) { /* column may already exist */ }
+  }
+  // FK constraints
+  const fkChecks = [
+    ["education", "fk_education_portfolio", "portfolio_id", "portfolio"],
+    ["experience", "fk_experience_portfolio", "portfolio_id", "portfolio"],
+    ["skills", "fk_skills_portfolio", "portfolio_id", "portfolio"],
+    ["certifications", "fk_certifications_portfolio", "portfolio_id", "portfolio"],
+    ["blogs", "fk_blogs_portfolio", "portfolio_id", "portfolio"],
+    ["custom_sections", "fk_custom_sections_portfolio", "portfolio_id", "portfolio"],
+    ["custom_section_items", "fk_custom_section_items_portfolio", "portfolio_id", "portfolio"],
+    ["custom_section_items", "fk_custom_section_items_section", "custom_section_id", "custom_sections"],
+  ];
+  for (const [table, constraint, col, refTable] of fkChecks) {
+    try {
       const exists = await pool.query(`SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = $1 AND table_name = $2`, [constraint, table]);
       if (exists.rows.length === 0) {
         await pool.query(`ALTER TABLE ${table} ADD CONSTRAINT ${constraint} FOREIGN KEY (${col}) REFERENCES ${refTable}(id) ON DELETE CASCADE;`);
       }
-    }
-    // Add portfolio_id to conversations
+    } catch (e) { /* skip */ }
+  }
+  // conversations portfolio_id
+  try {
     const convExists = await pool.query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'conversations' AND column_name = 'portfolio_id'`);
     if (convExists.rows.length === 0) {
       await pool.query(`ALTER TABLE conversations ADD COLUMN portfolio_id INTEGER REFERENCES portfolio(id) ON DELETE SET NULL;`);
     }
-    // Ensure default portfolio has admin login credentials
+  } catch (e) { /* skip */ }
+  // Default portfolio admin + set demo portfolios to never lock
+  try {
     await pool.query(`UPDATE portfolio SET login_username = 'admin' WHERE slug = 'default' AND login_username != 'admin';`);
-    // Enable aiChat and themeSelector for ALL portfolios (fix data-loss from old bug)
-    await pool.query(`UPDATE portfolio SET features = jsonb_set(jsonb_set(COALESCE(features, '{}'), '{aiChat}', 'true'), '{themeSelector}', 'true') WHERE features->>'aiChat' IS DISTINCT FROM 'true' OR features->>'themeSelector' IS DISTINCT FROM 'true';`);
-    logger.info("Database migrations completed");
-  } catch (err) {
-    logger.warn({ err }, "Migration warning (may already exist)");
-  }
+    await pool.query(`UPDATE portfolio SET trial_starts_at = NULL WHERE slug IN ('default','mustafa-protfolio','ayaan-protfolio','agha-protfolio');`);
+    // Rename demo portfolios
+    await pool.query(`UPDATE portfolio SET slug = 'ayaan-protfolio', name = 'Ayaan', login_username = 'ayaan' WHERE slug = 'umarjadoon';`);
+    await pool.query(`UPDATE portfolio SET slug = 'agha-protfolio', name = 'Agha', login_username = 'agha' WHERE slug = 'azhar-abbas';`);
+    // Ensure demo portfolios: no trial lock, correct login usernames
+    await pool.query(`UPDATE portfolio SET trial_starts_at = NULL, login_username = 'mustafa' WHERE slug = 'mustafa-protfolio';`);
+    await pool.query(`UPDATE portfolio SET trial_starts_at = NULL, login_username = 'ayaan' WHERE slug = 'ayaan-protfolio';`);
+    await pool.query(`UPDATE portfolio SET trial_starts_at = NULL, login_username = 'agha' WHERE slug = 'agha-protfolio';`);
+  } catch (e) { /* skip */ }
+  logger.info("Database migrations completed");
 }
 
 runMigrations().catch(err => logger.error({ err }, "Migration failed"));
@@ -55,7 +71,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:"],
@@ -82,7 +98,7 @@ app.use(cors({
     if (origin === "null") return callback(new Error("Not allowed by CORS"));
     // Allow requests with no origin (same-origin, server-to-server)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     callback(new Error("Not allowed by CORS"));
@@ -164,8 +180,20 @@ app.use(
 
 // ─── Apply rate limiters to specific routes BEFORE router ───────────────────
 app.use("/api/portfolio/login", authLimiter);
+app.use("/api/portfolio/refresh", authLimiter);
 app.use("/api/portfolio/create-client", superAdminLimiter);
 app.use("/api/portfolio/clients", superAdminLimiter);
+app.use("/api/portfolio/logout", authLimiter);
+// Rate limit all admin mutation endpoints
+app.use("/api/portfolio/education", superAdminLimiter);
+app.use("/api/portfolio/experience", superAdminLimiter);
+app.use("/api/portfolio/skills", superAdminLimiter);
+app.use("/api/portfolio/certifications", superAdminLimiter);
+app.use("/api/portfolio/blogs", superAdminLimiter);
+app.use("/api/portfolio/custom-sections", superAdminLimiter);
+app.use("/api/portfolio/cv", superAdminLimiter);
+app.use("/api/portfolio/reset", superAdminLimiter);
+app.use("/api/portfolio/import", superAdminLimiter);
 app.use("/api/openai", aiLimiter);
 app.use("/api/cv", aiLimiter);
 

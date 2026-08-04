@@ -28,7 +28,10 @@ export const portfolioTable = pgTable("portfolio", {
     blogPage: boolean;
     exploreAccess: boolean;
     aiMatchAccess: boolean;
-  }>().default({ cvImportExport: true, aiChat: true, themeSelector: true, blogPage: true, exploreAccess: false, aiMatchAccess: false }),
+    recruiterAiAccess: boolean;
+  }>().default({ cvImportExport: true, aiChat: true, themeSelector: true, blogPage: true, exploreAccess: false, aiMatchAccess: false, recruiterAiAccess: false }),
+  trialStartsAt: timestamp("trial_starts_at"),
+  adminLabel: text("admin_label"),
   cvExportSections: json("cv_export_sections").$type<{
     experience: boolean;
     education: boolean;
@@ -87,6 +90,7 @@ export const blogsTable = pgTable("blogs", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   summary: text("summary").notNull().default(""),
+  coverImage: text("cover_image"),
   publishedAt: timestamp("published_at").notNull().defaultNow(),
   orderIndex: integer("order_index").notNull().default(0),
 });
