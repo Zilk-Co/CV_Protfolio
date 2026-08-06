@@ -2,6 +2,27 @@ import { pgTable, text, serial, boolean, timestamp, integer, json } from "drizzl
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
+// ─── Terms & Conditions Acceptance ────────────────────────────────────────
+export const termsAcceptanceTable = pgTable("terms_acceptance", {
+  id: serial("id").primaryKey(),
+  portfolioId: integer("portfolio_id").notNull(),
+  termsVersion: text("terms_version").notNull().default("1.0"),
+  acceptedAt: timestamp("accepted_at").notNull().defaultNow(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  browser: text("browser"),
+  deviceType: text("device_type"),
+});
+
+// ─── Audit Log ────────────────────────────────────────────────────────────
+export const auditLogTable = pgTable("audit_log", {
+  id: serial("id").primaryKey(),
+  portfolioId: integer("portfolio_id").notNull(),
+  action: text("action").notNull(),
+  details: json("details").$type<Record<string, any>>().default({}),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const portfolioTable = pgTable("portfolio", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique().default("default"),

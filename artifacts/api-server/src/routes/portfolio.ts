@@ -9,6 +9,8 @@ import {
   blogsTable,
   customSectionsTable,
   customSectionItemsTable,
+  termsAcceptanceTable,
+  auditLogTable,
 } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -1206,6 +1208,78 @@ IMPORTANT: Do NOT return JSON. Use markdown formatting only. Write in a clear, p
     req.log.error({ err }, "Failed to match candidates");
     res.write(`data: ${JSON.stringify({ error: "Failed to process matching" })}\n\n`);
     res.end();
+  }
+});
+
+const CURRENT_TERMS_VERSION = "1.0";
+
+// ─── TERMS: Check if accepted ───────────────────────────────────────────
+router.get("/portfolio/terms/status", async (req, res) => {
+  const token = getTokenFromRequest(req);
+  if (!token) return res.status(401).json({ error: "Authentication required" });
+  if (isTokenRevoked(token)) return res.status(401).json({ error: "Token revoked" });
+  const payload = verifyToken(token);
+  if (!payload) return res.status(401).json({ error: "Invalid token" });
+  try {
+    const [portfolio] = await db.select().from(portfolioTable).where(eq(portfolioTable.id, payload.id)).limit(1);
+    if (!portfolio) return res.status(404).json({ error: "Portfolio not found" });
+    const [acceptance] = await db.select().from(termsAcceptanceTable)
+      .where(and(eq(termsAcceptanceTable.portfolioId, portfolio.id), eq(termsAcceptanceTable.termsVersion, CURRENT_TERMS_VERSION)))
+      .limit(1);
+    res.json({ accepted: !!acceptance, termsVersion: CURRENT_TERMS_VERSION, acceptedAt: acceptance?.acceptedAt || null });
+  } catch (err) {
+    req.log.error({ err }, "Failed to check terms status");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── TERMS: Accept ──────────────────────────────────────────────────────
+router.post("/portfolio/terms/accept", async (req, res) => {
+  const token = getTokenFromRequest(req);
+  if (!token) return res.status(401).json({ error: "Authentication required" });
+  if (isTokenRevoked(token)) return res.status(401).json({ error: "Token revoked" });
+  const payload = verifyToken(token);
+  if (!payload) return res.status(401).json({ error: "Invalid token" });
+  try {
+    const [portfolio] = await db.select().from(portfolioTable).where(eq(portfolioTable.id, payload.id)).limit(1);
+    if (!portfolio) return res.status(404).json({ error: "Portfolio not found" });
+    // Check if already accepted this version
+    const [existing] = await db.select().from(termsAcceptanceTable)
+      .where(and(eq(termsAcceptanceTable.portfolioId, portfolio.id), eq(termsAcceptanceTable.termsVersion, CURRENT_TERMS_VERSION)))
+      .limit(1);
+    if (existing) return res.json({ success: true, message: "Already accepted" });
+    // Record acceptance
+    const ipAddress = req.headers["x-forwarded-for"]?.toString() || req.ip || "";
+    const userAgent = req.headers["user-agent"] || "";
+    const browser = userAgent.includes("Firefox") ? "Firefox" : userAgent.includes("Edg") ? "Edge" : userAgent.includes("Chrome") ? "Chrome" : userAgent.includes("Safari") ? "Safari" : "Other";
+    const deviceType = /Mobile|Android|iPhone/i.test(userAgent) ? "Mobile" : /Tablet|iPad/i.test(userAgent) ? "Tablet" : "Desktop";
+    await db.insert(termsAcceptanceTable).values({
+      portfolioId: portfolio.id,
+      termsVersion: CURRENT_TERMS_VERSION,
+      ipAddress,
+      userAgent,
+      browser,
+      deviceType,
+    });
+    // Audit log
+    await db.insert(auditLogTable).values({
+      portfolioId: portfolio.id,
+      action: "terms_accepted",
+      details: {
+        termsVersion: CURRENT_TERMS_VERSION,
+        ipAddress,
+        browser,
+        deviceType,
+        userAgent,
+        portfolioSlug: portfolio.slug,
+        portfolioName: portfolio.name,
+        acceptedAt: new Date().toISOString(),
+      },
+    });
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Failed to accept terms");
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

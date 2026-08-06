@@ -23,6 +23,29 @@ async function runMigrations() {
   for (const sql of migrations) {
     try { await pool.query(sql); } catch (e) { /* column may already exist */ }
   }
+  // Create terms_acceptance table
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS terms_acceptance (
+      id SERIAL PRIMARY KEY,
+      portfolio_id INTEGER NOT NULL REFERENCES portfolio(id) ON DELETE CASCADE,
+      terms_version TEXT NOT NULL DEFAULT '1.0',
+      accepted_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      ip_address TEXT,
+      user_agent TEXT,
+      browser TEXT,
+      device_type TEXT
+    )`);
+  } catch (e) { /* table may already exist */ }
+  // Create audit_log table
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS audit_log (
+      id SERIAL PRIMARY KEY,
+      portfolio_id INTEGER NOT NULL REFERENCES portfolio(id) ON DELETE CASCADE,
+      action TEXT NOT NULL,
+      details JSONB DEFAULT '{}',
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )`);
+  } catch (e) { /* table may already exist */ }
   // Fix case-sensitive loginUsername: lowercase all existing values
   try { await pool.query("UPDATE portfolio SET login_username = LOWER(login_username) WHERE login_username <> LOWER(login_username)"); } catch (e) { /* ignore */ }
   // FK constraints

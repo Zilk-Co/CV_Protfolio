@@ -42,6 +42,7 @@ import { NexusFooter } from "@/components/nexus/NexusFooter";
 import { CreateClientDialog } from "@/components/CreateClientDialog";
 import { FloatingAiChat } from "@/components/FloatingAiChat";
 import { TrialLockOverlay } from "@/components/TrialLockOverlay";
+import TermsModal from "@/components/TermsModal";
 import { apiFetch } from "@/lib/api";
 
 
@@ -702,6 +703,19 @@ export default function PortfolioPage() {
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: getGetPortfolioQueryKey() }), [qc]);
 
+  // Terms & Conditions acceptance check
+  const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
+  useEffect(() => {
+    const token = localStorage.getItem("portfolio_token");
+    if (!token) { setTermsAccepted(true); return; } // skip for non-authenticated (public view)
+    apiFetch("/api/portfolio/terms/status", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => setTermsAccepted(d.accepted === true))
+      .catch(() => setTermsAccepted(true)); // fail open — let them view
+  }, []);
+
   useEffect(() => {
     if (portfolio?.sectionOrder && sectionOrder.length === 0) setSectionOrder(portfolio.sectionOrder);
   }, [portfolio?.sectionOrder]);
@@ -1098,6 +1112,15 @@ export default function PortfolioPage() {
     return (
       <div className={`portfolio-root theme-${theme} min-h-screen`}>
         <TrialLockOverlay slug={currentSlug} name={portfolio.name} />
+      </div>
+    );
+  }
+
+  // Terms & Conditions — block until accepted (admin viewers included)
+  if (isAdmin && termsAccepted === false) {
+    return (
+      <div className={`portfolio-root theme-${theme} min-h-screen`}>
+        <TermsModal onAccepted={() => setTermsAccepted(true)} />
       </div>
     );
   }
