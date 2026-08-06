@@ -23,6 +23,8 @@ async function runMigrations() {
   for (const sql of migrations) {
     try { await pool.query(sql); } catch (e) { /* column may already exist */ }
   }
+  // Fix case-sensitive loginUsername: lowercase all existing values
+  try { await pool.query("UPDATE portfolio SET login_username = LOWER(login_username) WHERE login_username <> LOWER(login_username)"); } catch (e) { /* ignore */ }
   // FK constraints
   const fkChecks = [
     ["education", "fk_education_portfolio", "portfolio_id", "portfolio"],

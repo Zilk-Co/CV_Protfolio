@@ -15456,9 +15456,9 @@ var require_type_is = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/lib/utils.js
+// ../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/utils.js
 var require_utils = __commonJS({
-  "../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/lib/utils.js"(exports, module) {
+  "../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/utils.js"(exports, module) {
     "use strict";
     var bytes = require_bytes();
     var contentType = require_content_type();
@@ -15507,9 +15507,9 @@ var require_utils = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/lib/read.js
+// ../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/read.js
 var require_read = __commonJS({
-  "../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/lib/read.js"(exports, module) {
+  "../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/read.js"(exports, module) {
     "use strict";
     var createError = require_http_errors();
     var getBody = require_raw_body();
@@ -15665,9 +15665,9 @@ var require_read = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/lib/types/json.js
+// ../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/types/json.js
 var require_json = __commonJS({
-  "../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/lib/types/json.js"(exports, module) {
+  "../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/types/json.js"(exports, module) {
     "use strict";
     var debug = require_src()("body-parser:json");
     var read = require_read();
@@ -15747,9 +15747,9 @@ var require_json = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/lib/types/raw.js
+// ../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/types/raw.js
 var require_raw = __commonJS({
-  "../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/lib/types/raw.js"(exports, module) {
+  "../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/types/raw.js"(exports, module) {
     "use strict";
     var debug = require_src()("body-parser:raw");
     var read = require_read();
@@ -15769,9 +15769,9 @@ var require_raw = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/lib/types/text.js
+// ../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/types/text.js
 var require_text = __commonJS({
-  "../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/lib/types/text.js"(exports, module) {
+  "../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/types/text.js"(exports, module) {
     "use strict";
     var debug = require_src()("body-parser:text");
     var read = require_read();
@@ -18298,9 +18298,9 @@ var require_lib2 = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/lib/types/urlencoded.js
+// ../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/types/urlencoded.js
 var require_urlencoded = __commonJS({
-  "../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/lib/types/urlencoded.js"(exports, module) {
+  "../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/types/urlencoded.js"(exports, module) {
     "use strict";
     var createError = require_http_errors();
     var debug = require_src()("body-parser:urlencoded");
@@ -18386,9 +18386,9 @@ var require_urlencoded = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/index.js
+// ../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/index.js
 var require_body_parser = __commonJS({
-  "../../node_modules/.pnpm/body-parser@2.2.2_supports-color@2.0.0/node_modules/body-parser/index.js"(exports, module) {
+  "../../node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/index.js"(exports, module) {
     "use strict";
     exports = module.exports = bodyParser;
     Object.defineProperty(exports, "json", {
@@ -18586,9 +18586,9 @@ var require_parseurl = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/finalhandler@2.1.1_supports-color@2.0.0/node_modules/finalhandler/index.js
+// ../../node_modules/.pnpm/finalhandler@2.1.1/node_modules/finalhandler/index.js
 var require_finalhandler = __commonJS({
-  "../../node_modules/.pnpm/finalhandler@2.1.1_supports-color@2.0.0/node_modules/finalhandler/index.js"(exports, module) {
+  "../../node_modules/.pnpm/finalhandler@2.1.1/node_modules/finalhandler/index.js"(exports, module) {
     "use strict";
     var debug = require_src()("finalhandler");
     var encodeUrl = require_encodeurl();
@@ -18713,9 +18713,9 @@ var require_finalhandler = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/lib/view.js
+// ../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/view.js
 var require_view = __commonJS({
-  "../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/lib/view.js"(exports, module) {
+  "../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/view.js"(exports, module) {
     "use strict";
     var debug = require_src()("express:view");
     var path2 = __require("node:path");
@@ -19677,9 +19677,9 @@ var require_proxy_addr = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/lib/utils.js
+// ../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/utils.js
 var require_utils3 = __commonJS({
-  "../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/lib/utils.js"(exports) {
+  "../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/utils.js"(exports) {
     "use strict";
     var { METHODS } = __require("node:http");
     var contentType = require_content_type();
@@ -20258,9 +20258,9 @@ var require_dist = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/router@2.2.0_supports-color@2.0.0/node_modules/router/lib/layer.js
+// ../../node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js
 var require_layer = __commonJS({
-  "../../node_modules/.pnpm/router@2.2.0_supports-color@2.0.0/node_modules/router/lib/layer.js"(exports, module) {
+  "../../node_modules/.pnpm/router@2.2.0/node_modules/router/lib/layer.js"(exports, module) {
     "use strict";
     var isPromise = require_is_promise();
     var pathRegexp = require_dist();
@@ -20408,9 +20408,9 @@ var require_layer = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/router@2.2.0_supports-color@2.0.0/node_modules/router/lib/route.js
+// ../../node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js
 var require_route = __commonJS({
-  "../../node_modules/.pnpm/router@2.2.0_supports-color@2.0.0/node_modules/router/lib/route.js"(exports, module) {
+  "../../node_modules/.pnpm/router@2.2.0/node_modules/router/lib/route.js"(exports, module) {
     "use strict";
     var debug = require_src()("router:route");
     var Layer = require_layer();
@@ -20528,9 +20528,9 @@ var require_route = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/router@2.2.0_supports-color@2.0.0/node_modules/router/index.js
+// ../../node_modules/.pnpm/router@2.2.0/node_modules/router/index.js
 var require_router = __commonJS({
-  "../../node_modules/.pnpm/router@2.2.0_supports-color@2.0.0/node_modules/router/index.js"(exports, module) {
+  "../../node_modules/.pnpm/router@2.2.0/node_modules/router/index.js"(exports, module) {
     "use strict";
     var isPromise = require_is_promise();
     var Layer = require_layer();
@@ -20926,9 +20926,9 @@ var require_router = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/lib/application.js
+// ../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/application.js
 var require_application = __commonJS({
-  "../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/lib/application.js"(exports, module) {
+  "../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/application.js"(exports, module) {
     "use strict";
     var finalhandler = require_finalhandler();
     var debug = require_src()("express:application");
@@ -21934,9 +21934,9 @@ var require_range_parser = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/lib/request.js
+// ../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/request.js
 var require_request = __commonJS({
-  "../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/lib/request.js"(exports, module) {
+  "../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/request.js"(exports, module) {
     "use strict";
     var accepts = require_accepts();
     var isIP2 = __require("node:net").isIP;
@@ -22475,9 +22475,9 @@ var require_cookie = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/send@1.2.1_supports-color@2.0.0/node_modules/send/index.js
+// ../../node_modules/.pnpm/send@1.2.1/node_modules/send/index.js
 var require_send = __commonJS({
-  "../../node_modules/.pnpm/send@1.2.1_supports-color@2.0.0/node_modules/send/index.js"(exports, module) {
+  "../../node_modules/.pnpm/send@1.2.1/node_modules/send/index.js"(exports, module) {
     "use strict";
     var createError = require_http_errors();
     var debug = require_src()("send");
@@ -23031,9 +23031,9 @@ var require_vary = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/lib/response.js
+// ../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/response.js
 var require_response = __commonJS({
-  "../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/lib/response.js"(exports, module) {
+  "../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/response.js"(exports, module) {
     "use strict";
     var contentDisposition = require_content_disposition();
     var createError = require_http_errors();
@@ -23501,9 +23501,9 @@ var require_response = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/serve-static@2.2.1_supports-color@2.0.0/node_modules/serve-static/index.js
+// ../../node_modules/.pnpm/serve-static@2.2.1/node_modules/serve-static/index.js
 var require_serve_static = __commonJS({
-  "../../node_modules/.pnpm/serve-static@2.2.1_supports-color@2.0.0/node_modules/serve-static/index.js"(exports, module) {
+  "../../node_modules/.pnpm/serve-static@2.2.1/node_modules/serve-static/index.js"(exports, module) {
     "use strict";
     var encodeUrl = require_encodeurl();
     var escapeHtml = require_escape_html();
@@ -23605,9 +23605,9 @@ var require_serve_static = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/lib/express.js
+// ../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/express.js
 var require_express = __commonJS({
-  "../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/lib/express.js"(exports, module) {
+  "../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/express.js"(exports, module) {
     "use strict";
     var bodyParser = require_body_parser();
     var EventEmitter = __require("node:events").EventEmitter;
@@ -23645,9 +23645,9 @@ var require_express = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/index.js
+// ../../node_modules/.pnpm/express@5.2.1/node_modules/express/index.js
 var require_express2 = __commonJS({
-  "../../node_modules/.pnpm/express@5.2.1_supports-color@2.0.0/node_modules/express/index.js"(exports, module) {
+  "../../node_modules/.pnpm/express@5.2.1/node_modules/express/index.js"(exports, module) {
     "use strict";
     module.exports = require_express();
   }
@@ -73141,7 +73141,7 @@ router2.post("/portfolio/create-client", async (req, res) => {
     const [newClient] = await db.insert(portfolioTable).values({
       slug: slug2,
       adminPassword: hashedPassword,
-      loginUsername: name || "newclient",
+      loginUsername: (name || "newclient").toLowerCase(),
       name: name || "New Client",
       email: email3 || "",
       title: "Aspiring Professional",
@@ -74003,6 +74003,10 @@ async function runMigrations() {
       await pool.query(sql2);
     } catch (e) {
     }
+  }
+  try {
+    await pool.query("UPDATE portfolio SET login_username = LOWER(login_username) WHERE login_username <> LOWER(login_username)");
+  } catch (e) {
   }
   const fkChecks = [
     ["education", "fk_education_portfolio", "portfolio_id", "portfolio"],

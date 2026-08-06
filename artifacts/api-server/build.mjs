@@ -100,6 +100,9 @@ async function buildAll() {
       "puppeteer",
       "puppeteer-core",
       "electron",
+      "real-require",
+      "colorette",
+      "pino-abstract-transport",
     ],
     sourcemap: "linked",
     plugins: [

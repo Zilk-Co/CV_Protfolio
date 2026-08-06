@@ -886,7 +886,7 @@ router.post("/portfolio/create-client", async (req, res) => {
     const [newClient] = await db.insert(portfolioTable).values({
       slug,
       adminPassword: hashedPassword,
-      loginUsername: name || "newclient",
+      loginUsername: (name || "newclient").toLowerCase(),
       name: name || "New Client",
       email: email || "",
       title: "Aspiring Professional",
