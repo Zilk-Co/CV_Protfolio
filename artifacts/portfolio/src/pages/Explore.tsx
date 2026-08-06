@@ -169,7 +169,7 @@ export default function ExplorePage() {
     setAiLoading(false);
   }, [aiInput, aiLoading]);
 
-  // Access check
+  // Access check — redirect away if no access
   if (!accessChecked) {
     return (
       <div className="portfolio-root min-h-screen flex items-center justify-center">
@@ -179,30 +179,9 @@ export default function ExplorePage() {
   }
 
   if (!hasAccess) {
-    return (
-      <div className="portfolio-root min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-sm w-full text-center space-y-5">
-          <div className="w-16 h-16 rounded-2xl bg-[#d97706]/10 border border-[#d97706]/20 flex items-center justify-center mx-auto">
-            <Shield className="w-8 h-8 text-[#d97706]" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-heading font-bold text-white">Membership Required</h1>
-            <p className="text-sm text-white/40 mt-2">The Explore page is available to active members only. Start your free trial or subscribe to browse all portfolios.</p>
-          </div>
-          <div className="flex flex-col gap-2">
-            <a href="/">
-              <Button className="w-full bg-[#d97706] hover:bg-[#c2660a] h-11 rounded-xl font-bold text-white">Start Free Trial</Button>
-            </a>
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" className="w-full h-11 rounded-xl font-bold border-white/20 text-white hover:bg-white/[.08]">
-                <MessageSquare className="w-4 h-4 mr-1" /> Message on WhatsApp
-              </Button>
-            </a>
-          </div>
-          <Link href="/" className="text-xs text-white/30 hover:text-white/60 transition-colors inline-block">← Back to home</Link>
-        </div>
-      </div>
-    );
+    // Redirect to home immediately — prevents direct URL access
+    if (typeof window !== "undefined") { window.location.href = "/"; }
+    return null;
   }
 
   return (
