@@ -1404,7 +1404,7 @@ export default function PortfolioPage() {
       )}
 
       {/* ── Resume template selector ──────────────────────────────────── */}
-      {(isAdmin || (isDemoPortfolio && !isAdmin)) && (
+      {isAdmin && (
         <section className="max-w-5xl mx-auto px-6 py-4">
           <div className="section-card p-4 rounded-xl border border-border bg-card">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-3">

@@ -9,19 +9,8 @@ const basePath = process.env.BASE_PATH || "/";
 
 const plugins: any[] = [react(), tailwindcss()];
 
-// Only load Replit plugins in Replit environment
-if (process.env.REPL_ID !== undefined) {
-  try {
-    const runtimeErrorOverlay = await import("@replit/vite-plugin-runtime-error-modal").then(m => m.default);
-    plugins.push(runtimeErrorOverlay());
-    if (process.env.NODE_ENV !== "production") {
-      const cartographer = await import("@replit/vite-plugin-cartographer").then(m => m.default);
-      const devBanner = await import("@replit/vite-plugin-dev-banner").then(m => m.default);
-      plugins.push(cartographer({ root: path.resolve(import.meta.dirname, "..") }));
-      plugins.push(devBanner());
-    }
-  } catch { /* not on replit */ }
-}
+// Replit plugins only loaded in Replit environment
+// (skipped outside Replit — imports fail in normal environments)
 
 export default defineConfig({
   base: basePath,
